@@ -2,6 +2,7 @@ using AuctionService.Application.Interfaces;
 using AuctionService.Application.Services;
 using AuctionService.Infrastructure.Data;
 using AuctionService.Infrastructure.Repositories;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,12 +24,32 @@ builder.Services.AddCors(options =>
     });
 });
 
-// DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=localhost,1433;Database=SubastaYaAuctionDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;";
 
-builder.Services.AddDbContext<AuctionDbContext>(options =>
-    options.UseSqlServer(connectionString));
+bool sqlAvailable = false;
+try
+{
+    using var conn = new SqlConnection(connectionString);
+    conn.Open();
+    sqlAvailable = true;
+}
+catch
+{
+    sqlAvailable = false;
+}
+
+if (sqlAvailable)
+{
+    builder.Services.AddDbContext<AuctionDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
+else
+{
+    Console.WriteLine("[AVISO] SQL Server no está disponible en localhost:1433. Ejecutando con base de datos en memoria para pruebas locales.");
+    builder.Services.AddDbContext<AuctionDbContext>(options =>
+        options.UseInMemoryDatabase("SubastaYaAuctionDb"));
+}
 
 // Dependency Injection
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();

@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using WalletService.Application.Interfaces;
 using WalletService.Application.Services;
@@ -6,12 +7,10 @@ using WalletService.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers & JSON
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS Config para React frontend (VS Code / localhost)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -23,14 +22,33 @@ builder.Services.AddCors(options =>
     });
 });
 
-// DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=localhost,1433;Database=SubastaYaWalletDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;";
 
-builder.Services.AddDbContext<WalletDbContext>(options =>
-    options.UseSqlServer(connectionString));
+bool sqlAvailable = false;
+try
+{
+    using var conn = new SqlConnection(connectionString);
+    conn.Open();
+    sqlAvailable = true;
+}
+catch
+{
+    sqlAvailable = false;
+}
 
-// Dependency Injection
+if (sqlAvailable)
+{
+    builder.Services.AddDbContext<WalletDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
+else
+{
+    Console.WriteLine("[AVISO] SQL Server no está disponible en localhost:1433. Ejecutando con base de datos en memoria para pruebas locales.");
+    builder.Services.AddDbContext<WalletDbContext>(options =>
+        options.UseInMemoryDatabase("SubastaYaWalletDb"));
+}
+
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletService, WalletServiceImplementation>();
 
@@ -46,7 +64,6 @@ app.UseCors("AllowFrontend");
 app.UseAuthorization();
 app.MapControllers();
 
-// Auto-crear y sembrar DB en inicio si no existe
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
