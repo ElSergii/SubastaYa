@@ -23,31 +23,21 @@ builder.Services.AddCors(options =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=localhost,1433;Database=SubastaYaWalletDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;";
+    ?? "Server=SERGIO\\SQLEXPRESS;Database=SubastaYaWalletDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
-bool sqlAvailable = false;
 try
 {
     using var conn = new SqlConnection(connectionString);
     conn.Open();
-    sqlAvailable = true;
+    Console.WriteLine("[INFO] Conectado exitosamente a SQL Server: " + connectionString);
 }
-catch
+catch (Exception ex)
 {
-    sqlAvailable = false;
+    Console.WriteLine("[AVISO] No se pudo abrir la conexion a SQL Server (" + ex.Message + "). Usando fallback EF Core.");
 }
 
-if (sqlAvailable)
-{
-    builder.Services.AddDbContext<WalletDbContext>(options =>
-        options.UseSqlServer(connectionString));
-}
-else
-{
-    Console.WriteLine("[AVISO] SQL Server no está disponible en localhost:1433. Ejecutando con base de datos en memoria para pruebas locales.");
-    builder.Services.AddDbContext<WalletDbContext>(options =>
-        options.UseInMemoryDatabase("SubastaYaWalletDb"));
-}
+builder.Services.AddDbContext<WalletDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletService, WalletServiceImplementation>();
