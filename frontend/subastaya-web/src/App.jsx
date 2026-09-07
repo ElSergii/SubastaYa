@@ -115,6 +115,8 @@ function App() {
     pushNotif('info', 'Sesión Finalizada', 'Has cerrado tu sesión.');
   };
 
+  const activeUserId = currentUser?.id || DEMO_ACCOUNTS[0].id;
+
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#09050a', color: '#f0e8dc' }}>
       {/* Sistema de Notificaciones Flotante */}
@@ -141,7 +143,7 @@ function App() {
       <Container maxWidth="lg">
         {currentTab === 'auctions' && (
           <AuctionList 
-            activeUserId={currentUser?.id || 2} 
+            activeUserId={activeUserId} 
             onBidSuccess={refreshWallet} 
             pushNotif={pushNotif}
           />
@@ -150,7 +152,7 @@ function App() {
         {currentTab === 'wallet' && currentUser?.role !== 'Admin' && (
           <WalletView 
             wallet={wallet} 
-            activeUserId={currentUser?.id || 2} 
+            activeUserId={activeUserId} 
             onWalletUpdated={refreshWallet} 
             pushNotif={pushNotif}
           />

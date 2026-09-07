@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, Typography, Box, Button, TextField, Chip, Divider, Avatar } from '@mui/material';
+import { Dialog, DialogContent, Typography, Box, Button, TextField, Chip, Avatar } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonIcon from '@mui/icons-material/Person';
 import GavelIcon from '@mui/icons-material/Gavel';
 
 export const DEMO_ACCOUNTS = [
-  { id: 2, name: 'Ana García', email: 'ana@subastaya.com', role: 'Comprador', avatar: 'A', balance: 150000 },
-  { id: 3, name: 'María López', email: 'maria@subastaya.com', role: 'Comprador', avatar: 'M', balance: 220000 },
-  { id: 4, name: 'Carlos Sin Fondos', email: 'carlos@subastaya.com', role: 'Comprador', avatar: 'C', balance: 0 },
-  { id: 1, name: 'Admin SubastaYa', email: 'admin@subastaya.com', role: 'Admin', avatar: '⚙️', balance: 9999999 }
+  { 
+    id: '22222222-2222-2222-2222-222222222222', 
+    name: 'Ana García (Comprador 1)', 
+    email: 'comprador1@test.com', 
+    role: 'Comprador', 
+    avatar: 'A' 
+  },
+  { 
+    id: '33333333-3333-3333-3333-333333333333', 
+    name: 'María López (Comprador 2)', 
+    email: 'comprador2@test.com', 
+    role: 'Comprador', 
+    avatar: 'M' 
+  },
+  { 
+    id: '44444444-4444-4444-4444-444444444444', 
+    name: 'Carlos Sin Fondos', 
+    email: 'sinfondos@test.com', 
+    role: 'Comprador', 
+    avatar: 'C' 
+  },
+  { 
+    id: '11111111-1111-1111-1111-111111111111', 
+    name: 'Admin SubastaYa (Vendedor)', 
+    email: 'vendedor@test.com', 
+    role: 'Admin', 
+    avatar: '⚙️' 
+  }
 ];
 
 export default function LoginModal({ open, onClose, onLoginSuccess }) {
@@ -21,18 +43,11 @@ export default function LoginModal({ open, onClose, onLoginSuccess }) {
     e.preventDefault();
     if (!email) return;
 
-    if (email.includes('admin')) {
+    if (email.includes('admin') || email.includes('vendedor')) {
       const user = DEMO_ACCOUNTS.find(a => a.role === 'Admin');
       onLoginSuccess(user);
     } else {
-      const user = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email.toLowerCase()) || {
-        id: 2,
-        name: email.split('@')[0],
-        email: email,
-        role: 'Comprador',
-        avatar: email.charAt(0).toUpperCase(),
-        balance: 100000
-      };
+      const user = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email.toLowerCase()) || DEMO_ACCOUNTS[0];
       onLoginSuccess(user);
     }
   };
@@ -172,7 +187,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }) {
               size="small"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ejemplo@subastaya.com"
+              placeholder="comprador1@test.com"
               sx={{
                 backgroundColor: '#09050a',
                 input: { color: '#f0e8dc' },

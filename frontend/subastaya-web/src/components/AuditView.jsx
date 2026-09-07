@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Card, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Card, Button, Chip } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { getAuditLogs } from '../services/api';
 
 const COLORES_ACCION = {
@@ -29,17 +30,28 @@ export default function AuditView() {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 3000);
+    const interval = setInterval(fetchLogs, 10000); // Muestreo suave cada 10s
     return () => clearInterval(interval);
   }, []);
 
   return (
     <Box sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <HistoryIcon sx={{ color: '#c9a84c', fontSize: 28 }} />
-        <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#f0e8dc' }}>
-          Registro de Auditoría en Vivo
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <HistoryIcon sx={{ color: '#c9a84c', fontSize: 28 }} />
+          <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#f0e8dc' }}>
+            Registro de Auditoría en Vivo
+          </Typography>
+        </Box>
+
+        <Button
+          size="small"
+          onClick={fetchLogs}
+          startIcon={<RefreshIcon sx={{ color: '#c9a84c' }} />}
+          sx={{ color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)', textTransform: 'none' }}
+        >
+          Actualizar
+        </Button>
       </Box>
       <Typography variant="body2" sx={{ color: '#7a6458', mb: 4 }}>
         Logs inmutables de transacciones ACID, validación de concurrencia optimista (RowVersion) y ofertas recibidas.
