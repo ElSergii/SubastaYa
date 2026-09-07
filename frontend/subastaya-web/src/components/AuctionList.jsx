@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Box, Typography, Alert, Snackbar } from '@mui/material';
+import { Grid, Box, Typography } from '@mui/material';
 import * as signalR from '@microsoft/signalr';
 import AuctionCard from './AuctionCard';
 import { getAuctions } from '../services/api';
 
-export default function AuctionList({ activeUserId, onBidSuccess }) {
+export default function AuctionList({ activeUserId, onBidSuccess, pushNotif }) {
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState('');
 
   const fetchAuctionsList = async () => {
     try {
@@ -23,7 +22,7 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
   useEffect(() => {
     fetchAuctionsList();
 
-    // Conexión en tiempo real por SignalR
+    // Conexión SignalR en vivo
     const connection = new signalR.HubConnectionBuilder()
       .withUrl('http://localhost:5000/hubs/auction')
       .withAutomaticReconnect()
@@ -31,9 +30,9 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
 
     connection.start()
       .then(() => {
-        console.log('Conectado a SignalR AuctionHub');
+        console.log('SignalR AuctionHub conectado');
 
-        // Escuchar nueva puja
+        // Evento: Nueva puja recibida
         connection.on('ReceiveBid', (auctionId, winningUserId, currentPrice) => {
           setAuctions((prev) =>
             prev.map((auc) =>
@@ -42,10 +41,10 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
                 : auc
             )
           );
-          setNotification(`⚡ Nueva puja en vivo: Subasta #${auctionId} subió a $${currentPrice}`);
+          if (pushNotif) pushNotif('info', 'Puja en Vivo ⚡', `Subasta #${auctionId} subió a $${currentPrice}`);
         });
 
-        // Escuchar extensión Anti-Sniping
+        // Evento: Anti-Sniping extendido
         connection.on('AuctionExtended', (auctionId, newEndTime) => {
           setAuctions((prev) =>
             prev.map((auc) =>
@@ -54,7 +53,7 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
                 : auc
             )
           );
-          setNotification(`⏳ Regla Anti-Sniping: ¡Subasta #${auctionId} extendida 2 minutos!`);
+          if (pushNotif) pushNotif('aviso', 'Regla Anti-Sniping ⏳', `¡Subasta #${auctionId} extendida 2 minutos!`);
         });
       })
       .catch((err) => console.error('SignalR Error:', err));
@@ -64,14 +63,61 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
     };
   }, []);
 
-  return (
-    <Box sx={{ py: 3 }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#f8fafc' }}>
-        Subastas Activas en Tiempo Real
-      </Typography>
+  const totalPujas = auctions.reduce((acc, curr) => acc + (curr.bidCount || 0), 0);
 
+  return (
+    <Box sx={{ py: 4 }}>
+      {/* SECCION HERO INSPIRADA EN EL DISEÑO */}
+      <Box sx={{ mb: 6 }}>
+        <Typography variant="caption" sx={{ letterSpacing: 3, color: '#9b2335', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 1 }}>
+          PLATAFORMA DE SUBASTAS EN TIEMPO REAL
+        </Typography>
+        <Typography className="serif" variant="h2" sx={{ fontWeight: 900, color: '#f0e8dc', lineHeight: 1.05, fontSize: { xs: '2.5rem', md: '4rem' } }}>
+          Subastas <em style={{ fontStyle: 'italic', color: '#c9a84c' }}>en vivo.</em>
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 2, color: '#7a6458', maxWidth: 600, fontSize: '0.95rem', lineHeight: 1.6 }}>
+          Participá en las subastas con reserva de fondos en Billetera Escrow, protección anti-sniping y control de concurrencia optimista en tiempo real.
+        </Typography>
+
+        {/* METRICAS RAPIDAS */}
+        <Box sx={{ display: 'flex', gap: 5, mt: 4 }}>
+          <Box>
+            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
+              {auctions.length}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#7a6458' }}>Subastas Activas</Typography>
+          </Box>
+          <Box>
+            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
+              {totalPujas}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#7a6458' }}>Pujas Registradas</Typography>
+          </Box>
+          <Box>
+            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
+              100%
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#7a6458' }}>Transacciones ACID</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* LINEA DIVISORA DORADA */}
+      <Box className="gold-line" sx={{ mb: 5 }} />
+
+      {/* TITULO DE SECCION */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography className="serif" variant="h5" sx={{ fontWeight: 700, color: '#f0e8dc' }}>
+          Lotes en Subasta
+        </Typography>
+        <Typography variant="caption" sx={{ color: '#7a6458' }}>
+          {auctions.length} catálogo(s) disponible(s)
+        </Typography>
+      </Box>
+
+      {/* GRILLA DE SUBASTAS */}
       {loading ? (
-        <Typography color="gray">Cargando subastas...</Typography>
+        <Typography sx={{ color: '#7a6458' }}>Cargando catálogo en vivo...</Typography>
       ) : (
         <Grid container spacing={3}>
           {auctions.map((auc) => (
@@ -79,6 +125,7 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
               <AuctionCard 
                 auction={auc} 
                 activeUserId={activeUserId} 
+                pushNotif={pushNotif}
                 onBidSuccess={() => {
                   fetchAuctionsList();
                   if (onBidSuccess) onBidSuccess();
@@ -88,18 +135,6 @@ export default function AuctionList({ activeUserId, onBidSuccess }) {
           ))}
         </Grid>
       )}
-
-      {/* Notificación flotante de SignalR */}
-      <Snackbar
-        open={Boolean(notification)}
-        autoHideDuration={4000}
-        onClose={() => setNotification('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert severity="info" variant="filled" sx={{ width: '100%' }}>
-          {notification}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

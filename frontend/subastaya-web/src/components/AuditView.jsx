@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import { getAuditLogs } from '../services/api';
+
+const COLORES_ACCION = {
+  PUJA_RECIBIDA: { text: '#22c55e', bg: '#052e16', label: 'PUJA_RECIBIDA' },
+  PUJA_RECHAZADA_INSUFICIENTE: { text: '#ef4444', bg: '#450a0a', label: 'MONTO_INSUFICIENTE' },
+  CONCURRENCIA_409: { text: '#ef4444', bg: '#450a0a', label: '409_CONFLICTO_CONCURRENCIA' },
+  CONCURRENCIA_CONFLICITO: { text: '#ef4444', bg: '#450a0a', label: '409_CONFLICTO_CONCURRENCIA' },
+  PAGO_GARANTIZADO: { text: '#c9a84c', bg: '#1c1400', label: 'ESCROW_TRANSACCION' },
+  ANTI_SNIPING: { text: '#f59e0b', bg: '#1c0d00', label: 'EXTENSION_ANTI_SNIPING' },
+};
 
 export default function AuditView() {
   const [logs, setLogs] = useState([]);
@@ -20,63 +29,80 @@ export default function AuditView() {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 4000);
+    const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <Box sx={{ py: 3 }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 1 }}>
-        <HistoryIcon sx={{ color: '#38bdf8' }} /> Historial de Auditoría en Vivo
+    <Box sx={{ py: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+        <HistoryIcon sx={{ color: '#c9a84c', fontSize: 28 }} />
+        <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#f0e8dc' }}>
+          Registro de Auditoría en Vivo
+        </Typography>
+      </Box>
+      <Typography variant="body2" sx={{ color: '#7a6458', mb: 4 }}>
+        Logs inmutables de transacciones ACID, validación de concurrencia optimista (RowVersion) y ofertas recibidas.
       </Typography>
 
       {loading ? (
-        <Typography color="gray">Cargando eventos de auditoría...</Typography>
+        <Typography sx={{ color: '#7a6458' }}>Cargando eventos de auditoría...</Typography>
+      ) : logs.length === 0 ? (
+        <Card className="glass-card" sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: '#7a6458' }}>
+            Sin registros de auditoría aún. Realizá una puja para ver el registro en vivo.
+          </Typography>
+        </Card>
       ) : (
-        <TableContainer component={Paper} className="glass-card" sx={{ backgroundColor: 'rgba(30, 41, 59, 0.8)' }}>
-          <Table>
-            <TableHead sx={{ backgroundColor: '#0f172a' }}>
-              <TableRow>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>Fecha / Hora</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>Acción</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>Subasta</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>Usuario</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontWeight: 'bold' }}>Monto</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} sx={{ color: '#94a3b8', textAlign: 'center' }}>
-                    No hay registros de auditoría aún.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => (
-                  <TableRow key={log.id} sx={{ '&:nth-of-type(odd)': { backgroundColor: 'rgba(15, 23, 42, 0.3)' } }}>
-                    <TableCell sx={{ color: '#f8fafc' }}>#{log.id}</TableCell>
-                    <TableCell sx={{ color: '#cbd5e1' }}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </TableCell>
-                    <TableCell sx={{ color: '#f8fafc' }}>
-                      <Chip 
-                        label={log.action} 
-                        size="small" 
-                        sx={{ backgroundColor: '#2563eb', color: '#fff' }} 
-                      />
-                    </TableCell>
-                    <TableCell sx={{ color: '#38bdf8' }}>Subasta #{log.auctionId}</TableCell>
-                    <TableCell sx={{ color: '#f8fafc' }}>Usuario #{log.userId}</TableCell>
-                    <TableCell sx={{ color: '#4ade80', fontWeight: 'bold' }}>
-                      ${log.amount}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {[...logs].reverse().map((log) => {
+            const styleInfo = COLORES_ACCION[log.action] || { text: '#c9a84c', bg: '#1c1400', label: log.action };
+            return (
+              <Card 
+                key={log.id} 
+                className="glass-card"
+                sx={{ 
+                  backgroundColor: styleInfo.bg, 
+                  border: '1px solid rgba(201, 168, 76, 0.15)',
+                  px: 2.5, 
+                  py: 1.5 
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Chip 
+                      label={styleInfo.label} 
+                      size="small" 
+                      sx={{ 
+                        backgroundColor: 'rgba(255,255,255,0.05)', 
+                        color: styleInfo.text, 
+                        fontWeight: 800,
+                        fontSize: '0.7rem',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        border: `1px solid ${styleInfo.text}`
+                      }} 
+                    />
+                    <Typography variant="body2" sx={{ color: '#f0e8dc', fontWeight: 600 }}>
+                      Subasta #{log.auctionId}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#7a6458', fontFamily: 'JetBrains Mono' }}>
+                      Usuario #{log.userId}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography className="serif" variant="body1" sx={{ color: '#c9a84c', fontWeight: 800 }}>
+                      ${log.amount?.toLocaleString('es-AR')}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#7a6458', fontFamily: 'JetBrains Mono', fontSize: '0.7rem' }}>
+                      {new Date(log.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 })}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Card>
+            );
+          })}
+        </Box>
       )}
     </Box>
   );
