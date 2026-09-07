@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import AuctionList from './components/AuctionList';
 import WalletView from './components/WalletView';
 import AuditView from './components/AuditView';
+import AdminPanel from './components/AdminPanel';
 import { getWallet } from './services/api';
 import './App.css';
 
@@ -23,12 +24,6 @@ function useNotif() {
 
 function Notificaciones({ lista }) {
   const iconos = { exito: '✓', error: '✕', aviso: '⚠', info: 'ℹ' };
-  const estilos = {
-    exito: 'border-emerald-600/50 bg-emerald-950/95 text-emerald-200',
-    error: 'border-red-700/50 bg-red-950/95 text-red-200',
-    aviso: 'border-amber-600/50 bg-amber-950/95 text-amber-200',
-    info: 'border-[#c9a84c]/40 bg-[#130b10]/95 text-[#c9a84c]',
-  };
 
   return (
     <Box
@@ -103,7 +98,7 @@ function App() {
       {/* Sistema de Notificaciones Flotante */}
       <Notificaciones lista={notifs} />
 
-      {/* Barra de Navegación Estilo TicketSys */}
+      {/* Barra de Navegación con diferenciación de Rol Admin vs Comprador */}
       <Navbar 
         activeUser={activeUser} 
         setActiveUser={setActiveUser} 
@@ -127,6 +122,15 @@ function App() {
             wallet={wallet} 
             activeUserId={activeUser} 
             onWalletUpdated={refreshWallet} 
+            pushNotif={pushNotif}
+          />
+        )}
+
+        {currentTab === 'admin' && (
+          <AdminPanel 
+            onAuctionCreated={() => {
+              pushNotif('exito', 'Catálogo Actualizado', 'Subasta publicada en el sistema.');
+            }}
             pushNotif={pushNotif}
           />
         )}

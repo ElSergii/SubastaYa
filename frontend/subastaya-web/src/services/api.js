@@ -22,6 +22,12 @@ export const getAuctionById = async (id) => {
   return response.data;
 };
 
+// Crear una nueva subasta (Exclusivo Admin / Vendedor)
+export const createAuction = async (auctionData) => {
+  const response = await api.post('/auctions', auctionData);
+  return response.data;
+};
+
 // Realizar una puja en una subasta
 export const placeBid = async (auctionId, userId, amount) => {
   const response = await api.post(`/auctions/${auctionId}/bids`, {
