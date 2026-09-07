@@ -2,9 +2,12 @@ using AuctionService.Application.DTOs;
 using AuctionService.Application.Services;
 using AuctionService.Domain.Entities;
 using AuctionService.Domain.Enums;
+using AuctionService.Hubs;
 using AuctionService.Infrastructure.Data;
 using AuctionService.Infrastructure.Repositories;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace AuctionService.Tests;
@@ -20,6 +23,19 @@ public class AuctionServiceTests
         var context = new AuctionDbContext(options);
         context.Database.EnsureCreated();
         return context;
+    }
+
+    private static IHubContext<AuctionHub> GetMockHubContext()
+    {
+        var mockHubContext = new Mock<IHubContext<AuctionHub>>();
+        var mockClients = new Mock<IHubClients>();
+        var mockClientProxy = new Mock<IClientProxy>();
+
+        mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(mockClientProxy.Object);
+        mockClients.Setup(c => c.All).Returns(mockClientProxy.Object);
+        mockHubContext.Setup(h => h.Clients).Returns(mockClients.Object);
+
+        return mockHubContext.Object;
     }
 
     [Fact]
@@ -87,7 +103,8 @@ public class AuctionServiceTests
         await context.SaveChangesAsync();
 
         var repository = new AuctionRepository(context);
-        var bidService = new BidServiceImplementation(repository);
+        var hubContext = GetMockHubContext();
+        var bidService = new BidServiceImplementation(repository, hubContext);
 
         var bidAmount = activeAuction.CurrentPrice + activeAuction.MinimumIncrement + 1000m;
         var bidDto = new CreateBidDto
@@ -137,9 +154,10 @@ public class AuctionServiceTests
         await context.SaveChangesAsync();
 
         var repository = new AuctionRepository(context);
-        var bidService = new BidServiceImplementation(repository);
+        var hubContext = GetMockHubContext();
+        var bidService = new BidServiceImplementation(repository, hubContext);
 
-        var invalidAmount = activeAuction.CurrentPrice + 500m; // Menor al incremento mínimo de 2000m
+        var invalidAmount = activeAuction.CurrentPrice + 500m;
 
         var bidDto = new CreateBidDto
         {
@@ -161,7 +179,6 @@ public class AuctionServiceTests
         var sellerId = Guid.NewGuid();
         var buyerId = Guid.NewGuid();
 
-        // Subasta activa que vence en 30 segundos (Zona crítica Anti-Sniping)
         var criticalAuction = new Auction
         {
             Id = Guid.NewGuid(),
@@ -174,7 +191,7 @@ public class AuctionServiceTests
             MinimumIncrement = 1000m,
             SellerId = sellerId,
             StartDate = DateTime.UtcNow.AddMinutes(-30),
-            EndDate = DateTime.UtcNow.AddSeconds(30), // Faltan 30 segundos
+            EndDate = DateTime.UtcNow.AddSeconds(30),
             Status = AuctionStatus.Active,
             BidCount = 0
         };
@@ -183,7 +200,8 @@ public class AuctionServiceTests
         await context.SaveChangesAsync();
 
         var repository = new AuctionRepository(context);
-        var bidService = new BidServiceImplementation(repository);
+        var hubContext = GetMockHubContext();
+        var bidService = new BidServiceImplementation(repository, hubContext);
 
         var bidDto = new CreateBidDto
         {

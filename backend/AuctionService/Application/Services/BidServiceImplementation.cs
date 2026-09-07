@@ -2,6 +2,8 @@ using AuctionService.Application.DTOs;
 using AuctionService.Application.Interfaces;
 using AuctionService.Domain.Entities;
 using AuctionService.Domain.Enums;
+using AuctionService.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuctionService.Application.Services;
@@ -9,10 +11,12 @@ namespace AuctionService.Application.Services;
 public class BidServiceImplementation : IBidService
 {
     private readonly IAuctionRepository _auctionRepository;
+    private readonly IHubContext<AuctionHub> _hubContext;
 
-    public BidServiceImplementation(IAuctionRepository auctionRepository)
+    public BidServiceImplementation(IAuctionRepository auctionRepository, IHubContext<AuctionHub> hubContext)
     {
         _auctionRepository = auctionRepository;
+        _hubContext = hubContext;
     }
 
     public async Task<BidResultDto> PlaceBidAsync(CreateBidDto bidDto)
@@ -64,7 +68,7 @@ public class BidServiceImplementation : IBidService
             throw new InvalidOperationException($"El monto ofertado (${bidDto.Amount:N2}) debe ser al menos ${minRequired:N2}.");
         }
 
-        // Si se envió RowVersion previo para comprobación explícita
+        // Comprobación de concurrencia mediante RowVersion desactualizado
         if (bidDto.ExpectedRowVersion != null && bidDto.ExpectedRowVersion.Length > 0)
         {
             if (!auction.RowVersion.SequenceEqual(bidDto.ExpectedRowVersion))
@@ -143,7 +147,6 @@ public class BidServiceImplementation : IBidService
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            // Registrar conflicto en auditoría
             await _auctionRepository.AddAuditLogAsync(new AuditLog
             {
                 EventType = "CONCURRENCY_BID_REJECTED",
@@ -155,10 +158,10 @@ public class BidServiceImplementation : IBidService
             });
             await _auctionRepository.SaveChangesAsync();
 
-            throw; // Se capturará en el controller para devolver HTTP 409 Conflict
+            throw;
         }
 
-        return new BidResultDto
+        var result = new BidResultDto
         {
             Success = true,
             Message = antiSnipingTriggered ? "¡Oferta aceptada! Se activó Anti-Sniping (+2 min de extensión)." : "¡Oferta aceptada! Eres el postor líder.",
@@ -176,6 +179,34 @@ public class BidServiceImplementation : IBidService
                 IsWinningBid = newBid.IsWinningBid
             }
         };
+
+        // Notificación en tiempo real vía SignalR a todos los clientes suscritos a la sala
+        try
+        {
+            await _hubContext.Clients.Group(auction.Id.ToString()).SendAsync("ReceiveNewBid", result);
+            await _hubContext.Clients.All.SendAsync("ReceiveAuctionUpdated", new
+            {
+                auctionId = auction.Id,
+                currentPrice = auction.CurrentPrice,
+                bidCount = auction.BidCount,
+                effectiveEndDate
+            });
+
+            if (antiSnipingTriggered)
+            {
+                await _hubContext.Clients.Group(auction.Id.ToString()).SendAsync("ReceiveAntiSnipingExtension", new
+                {
+                    auctionId = auction.Id,
+                    effectiveEndDate
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVISO SIGNALR]: No se pudo emitir evento en tiempo real: {ex.Message}");
+        }
+
+        return result;
     }
 
     public async Task<IEnumerable<BidDto>> GetBidsForAuctionAsync(Guid auctionId)

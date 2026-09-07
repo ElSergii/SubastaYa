@@ -1,5 +1,6 @@
 using AuctionService.Application.Interfaces;
 using AuctionService.Application.Services;
+using AuctionService.Hubs;
 using AuctionService.Infrastructure.Data;
 using AuctionService.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
@@ -7,8 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers & JSON
+// Controllers & SignalR
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -67,6 +69,9 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseAuthorization();
 app.MapControllers();
+
+// Mapeo del Hub SignalR para subastas en tiempo real
+app.MapHub<AuctionHub>("/hubs/auction");
 
 // Auto-crear y sembrar DB en inicio si no existe
 using (var scope = app.Services.CreateScope())
