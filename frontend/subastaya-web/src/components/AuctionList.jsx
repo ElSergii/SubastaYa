@@ -8,8 +8,8 @@ const now = new Date();
 export const DEFAULT_SAMPLE_AUCTIONS = [
   {
     id: 'a1111111-1111-1111-1111-111111111111',
-    title: 'MacBook Pro M3 Max 16 inch 36GB RAM',
-    description: 'Laptop profesional Apple M3 Max en estado impecable con caja original y cargador 140W.',
+    title: 'MacBook Pro M3 Max 16 Pulgadas 36GB RAM',
+    description: 'Computadora portátil profesional Apple M3 Max en estado impecable con caja original y cargador de 140W.',
     imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
     categoryName: 'Tecnología',
     startingPrice: 30000,
@@ -17,27 +17,27 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
     minimumIncrement: 2000,
     winningUserId: '22222222-2222-2222-2222-222222222222',
     endTime: new Date(now.getTime() + 25 * 60000).toISOString(),
-    status: 'Active',
+    status: 'Activa',
     bidCount: 4
   },
   {
     id: 'a2222222-2222-2222-2222-222222222222',
     title: 'Reloj Rolex Submariner Date 1998 Original',
-    description: 'Edición de colección con certificado de autenticidad y service oficial reciente.',
+    description: 'Edición especial de colección con certificado de autenticidad y mantenimiento oficial reciente.',
     imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
     categoryName: 'Coleccionables',
     startingPrice: 100000,
     currentPrice: 125000,
     minimumIncrement: 5000,
     winningUserId: '33333333-3333-3333-3333-333333333333',
-    endTime: new Date(now.getTime() + 45 * 1000).toISOString(), // Quedan 45s (Anti-Sniping Zona Crítica)
-    status: 'Active',
+    endTime: new Date(now.getTime() + 45 * 1000).toISOString(), // Quedan 45s (Zona Crítica Anti-Sniping)
+    status: 'Activa',
     bidCount: 6
   },
   {
     id: 'a3333333-3333-3333-3333-333333333333',
-    title: 'Guitarra Gibson Les Paul Standard 1959 Reissue',
-    description: 'Instrumento de gama alta con estuche rígido Custom Shop e inspección certificada.',
+    title: 'Guitarra Gibson Les Paul Standard Reedición 1959',
+    description: 'Instrumento musical de alta gama con estuche rígido Custom Shop e inspección certificada.',
     imageUrl: 'https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=800&q=80',
     categoryName: 'Coleccionables',
     startingPrice: 80000,
@@ -45,7 +45,7 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
     minimumIncrement: 2500,
     winningUserId: null,
     endTime: new Date(now.getTime() + 90 * 60000).toISOString(),
-    status: 'Active',
+    status: 'Activa',
     bidCount: 2
   },
   {
@@ -59,13 +59,13 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
     minimumIncrement: 1000,
     winningUserId: '22222222-2222-2222-2222-222222222222',
     endTime: new Date(now.getTime() + 40 * 60000).toISOString(),
-    status: 'Active',
+    status: 'Activa',
     bidCount: 5
   },
   {
     id: 'a5555555-5555-5555-5555-555555555555',
-    title: 'Scooter Eléctrico Xiaomi Pro 2',
-    description: 'Scooter urbano 45km autonomía con freno de disco y pantalla digital integrada.',
+    title: 'Monopatín Eléctrico Xiaomi Pro 2',
+    description: 'Monopatín urbano con 45km de autonomía, freno de disco y pantalla digital integrada.',
     imageUrl: 'https://images.unsplash.com/photo-1597086884617-64b58e72efcb?auto=format&fit=crop&w=800&q=80',
     categoryName: 'Vehículos',
     startingPrice: 50000,
@@ -73,12 +73,12 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
     minimumIncrement: 2000,
     winningUserId: null,
     endTime: new Date(now.getTime() + 15 * 60000).toISOString(),
-    status: 'Active',
+    status: 'Activa',
     bidCount: 1
   },
   {
     id: 'a6666666-6666-6666-6666-666666666666',
-    title: 'Porsche 911 Carrera RS 1973 Scale Model',
+    title: 'Modelo a Escala Porsche 911 Carrera RS 1973',
     description: 'Réplica de colección escala 1:18 en metal con detalles de interior artesanales.',
     imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
     categoryName: 'Vehículos',
@@ -87,7 +87,7 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
     minimumIncrement: 1500,
     winningUserId: '33333333-3333-3333-3333-333333333333',
     endTime: new Date(now.getTime() + 60 * 60000).toISOString(),
-    status: 'Active',
+    status: 'Activa',
     bidCount: 3
   }
 ];
