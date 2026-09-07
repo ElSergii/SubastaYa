@@ -95,32 +95,26 @@ export const DEFAULT_SAMPLE_AUCTIONS = [
 
 export default function AuctionList({ activeUserId, onBidSuccess, pushNotif }) {
   const [auctions, setAuctions] = useState(DEFAULT_SAMPLE_AUCTIONS);
-  const [loading, setLoading] = useState(false);
 
   const fetchAuctionsList = async () => {
-    try {
-      const data = await getAuctions();
-      if (Array.isArray(data) && data.length > 0) {
-        setAuctions(data);
-      }
-    } catch (err) {
-      console.log('Usando catálogo predeterminado de subastas.');
+    const data = await getAuctions();
+    if (Array.isArray(data) && data.length > 0) {
+      setAuctions(data);
     }
   };
 
   useEffect(() => {
     fetchAuctionsList();
 
-    // Conexión SignalR en vivo
+    // Conexión SignalR en vivo con logs deshabilitados si está offline
     const connection = new signalR.HubConnectionBuilder()
       .withUrl('http://localhost:5000/hubs/auction')
+      .configureLogging(signalR.LogLevel.None)
       .withAutomaticReconnect()
       .build();
 
     connection.start()
       .then(() => {
-        console.log('SignalR AuctionHub conectado');
-
         // Evento: Nueva puja recibida
         connection.on('ReceiveBid', (auctionId, winningUserId, currentPrice) => {
           setAuctions((prev) =>
@@ -146,7 +140,7 @@ export default function AuctionList({ activeUserId, onBidSuccess, pushNotif }) {
         });
       })
       .catch(() => {
-        // En caso de que el gateway no esté conectado en ese milisegundo
+        // Silenciar reintentos cuando el backend no esté iniciado
       });
 
     return () => {
