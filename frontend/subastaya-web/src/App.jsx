@@ -5,6 +5,7 @@ import AuctionList from './components/AuctionList';
 import WalletView from './components/WalletView';
 import AuditView from './components/AuditView';
 import AdminPanel from './components/AdminPanel';
+import LoginModal, { DEMO_ACCOUNTS } from './components/LoginModal';
 import { getWallet } from './services/api';
 import './App.css';
 
@@ -75,14 +76,16 @@ function Notificaciones({ lista }) {
 }
 
 function App() {
-  const [activeUser, setActiveUser] = useState(2); // Comprador 1 por defecto (Ana García)
+  const [currentUser, setCurrentUser] = useState(DEMO_ACCOUNTS[0]); // Ana García por defecto
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [currentTab, setCurrentTab] = useState('auctions');
   const { lista: notifs, push: pushNotif } = useNotif();
 
   const refreshWallet = async () => {
+    if (!currentUser || currentUser.role === 'Admin') return;
     try {
-      const data = await getWallet(activeUser);
+      const data = await getWallet(currentUser.id);
       setWallet(data);
     } catch (err) {
       console.error('Error al obtener billetera:', err);
@@ -91,42 +94,69 @@ function App() {
 
   useEffect(() => {
     refreshWallet();
-  }, [activeUser]);
+  }, [currentUser]);
+
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setLoginModalOpen(false);
+    pushNotif('exito', 'Sesión Iniciada', `Bienvenido/a ${user.name} (${user.role})`);
+
+    if (user.role === 'Admin') {
+      setCurrentTab('admin');
+    } else {
+      setCurrentTab('auctions');
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setWallet(null);
+    setCurrentTab('auctions');
+    pushNotif('info', 'Sesión Finalizada', 'Has cerrado tu sesión.');
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#09050a', color: '#f0e8dc' }}>
       {/* Sistema de Notificaciones Flotante */}
       <Notificaciones lista={notifs} />
 
-      {/* Barra de Navegación con diferenciación de Rol Admin vs Comprador */}
+      {/* Modal de Inicio de Sesión */}
+      <LoginModal 
+        open={loginModalOpen} 
+        onClose={() => setLoginModalOpen(false)} 
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Barra de Navegación con Login/Logout */}
       <Navbar 
-        activeUser={activeUser} 
-        setActiveUser={setActiveUser} 
+        currentUser={currentUser} 
         wallet={wallet} 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
+        onOpenLogin={() => setLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Contenido Principal */}
       <Container maxWidth="lg">
         {currentTab === 'auctions' && (
           <AuctionList 
-            activeUserId={activeUser} 
+            activeUserId={currentUser?.id || 2} 
             onBidSuccess={refreshWallet} 
             pushNotif={pushNotif}
           />
         )}
 
-        {currentTab === 'wallet' && (
+        {currentTab === 'wallet' && currentUser?.role !== 'Admin' && (
           <WalletView 
             wallet={wallet} 
-            activeUserId={activeUser} 
+            activeUserId={currentUser?.id || 2} 
             onWalletUpdated={refreshWallet} 
             pushNotif={pushNotif}
           />
         )}
 
-        {currentTab === 'admin' && (
+        {currentTab === 'admin' && currentUser?.role === 'Admin' && (
           <AdminPanel 
             onAuctionCreated={() => {
               pushNotif('exito', 'Catálogo Actualizado', 'Subasta publicada en el sistema.');

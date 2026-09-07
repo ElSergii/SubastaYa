@@ -1,38 +1,27 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Select, MenuItem, Box, Button, Chip } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, Button, Chip, Avatar } from '@mui/material';
 import GavelIcon from '@mui/icons-material/Gavel';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HistoryIcon from '@mui/icons-material/History';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LoginIcon from '@mui/icons-material/Login';
 
-export const USERS = [
-  { id: 2, name: 'Comprador 1 (Ana García)', role: 'Comprador' },
-  { id: 3, name: 'Comprador 2 (María López)', role: 'Comprador' },
-  { id: 4, name: 'Comprador 3 (Carlos Sin Fondos)', role: 'Comprador' },
-  { id: 1, name: '⚙️ Admin / Vendedor', role: 'Admin' }
-];
-
-export default function Navbar({ activeUser, setActiveUser, wallet, currentTab, setCurrentTab }) {
-  const isAdmin = activeUser === 1;
+export default function Navbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout }) {
+  const isAdmin = currentUser?.role === 'Admin';
 
   return (
     <AppBar position="sticky" className="glass-header" sx={{ elevation: 0, borderBottom: '1px solid rgba(201, 168, 76, 0.15)', background: 'rgba(9,5,10,0.95)' }}>
       <Toolbar sx={{ justifyContent: 'space-between', maxW: '1200px', width: '100%', mx: 'auto', px: { xs: 2, md: 4 } }}>
         
-        {/* LOGO & TITULO ELEGANTE */}
+        {/* LOGO & TITULO */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => setCurrentTab('auctions')}>
-          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(201,168,76,0.1)' }}>
-            <Typography sx={{ color: '#c9a84c', fontSize: '14px', fontWeight: 'bold' }}>✦</Typography>
+          <Box sx={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(201,168,76,0.1)' }}>
+            <Typography sx={{ color: '#c9a84c', fontSize: '15px', fontWeight: 'bold' }}>✦</Typography>
           </Box>
           <Typography className="serif" variant="h6" sx={{ fontWeight: 800, color: '#c9a84c', letterSpacing: 0.5, fontSize: '1.25rem' }}>
             SubastaYa
           </Typography>
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, ml: 2, pl: 2, borderLeft: '1px solid #1c0f15' }}>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-            <Typography variant="caption" sx={{ color: '#7a6458', fontSize: '0.75rem' }}>
-              Rol: {isAdmin ? 'ADMINISTRADOR' : 'COMPRADOR'}
-            </Typography>
-          </Box>
         </Box>
 
         {/* BOTONES DE NAVEGACION */}
@@ -106,59 +95,88 @@ export default function Navbar({ activeUser, setActiveUser, wallet, currentTab, 
           </Button>
         </Box>
 
-        {/* SALDO RAPIDO Y CAMBIO DE USUARIO */}
+        {/* ESTADO DE AUTENTICACION Y USUARIO */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {!isAdmin && wallet && (
-            <Chip 
-              icon={<AccountBalanceWalletIcon style={{ color: '#4ade80', fontSize: 16 }} />} 
-              label={`Disp: $${wallet.availableBalance.toLocaleString('es-AR')}`}
-              sx={{ 
-                backgroundColor: '#130b10', 
-                color: '#4ade80', 
-                fontWeight: 700, 
-                border: '1px solid rgba(74, 222, 128, 0.3)',
-                fontFamily: 'JetBrains Mono, monospace'
-              }}
-            />
-          )}
+          {currentUser ? (
+            <>
+              {!isAdmin && wallet && (
+                <Chip 
+                  icon={<AccountBalanceWalletIcon style={{ color: '#4ade80', fontSize: 16 }} />} 
+                  label={`Disp: $${wallet.availableBalance.toLocaleString('es-AR')}`}
+                  sx={{ 
+                    backgroundColor: '#130b10', 
+                    color: '#4ade80', 
+                    fontWeight: 700, 
+                    border: '1px solid rgba(74, 222, 128, 0.3)',
+                    fontFamily: 'JetBrains Mono, monospace'
+                  }}
+                />
+              )}
 
-          {isAdmin && (
-            <Chip 
-              icon={<AdminPanelSettingsIcon style={{ color: '#c9a84c', fontSize: 16 }} />} 
-              label="MODO ADMIN"
-              sx={{ 
-                backgroundColor: '#130b10', 
-                color: '#c9a84c', 
-                fontWeight: 700, 
-                border: '1px solid rgba(201, 168, 76, 0.4)'
-              }}
-            />
-          )}
+              {isAdmin && (
+                <Chip 
+                  icon={<AdminPanelSettingsIcon style={{ color: '#c9a84c', fontSize: 16 }} />} 
+                  label="ADMIN"
+                  sx={{ 
+                    backgroundColor: '#130b10', 
+                    color: '#c9a84c', 
+                    fontWeight: 700, 
+                    border: '1px solid rgba(201, 168, 76, 0.4)'
+                  }}
+                />
+              )}
 
-          <Select
-            value={activeUser}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              setActiveUser(val);
-              if (val === 1) setCurrentTab('admin');
-              else if (currentTab === 'admin') setCurrentTab('auctions');
-            }}
-            size="small"
-            sx={{
-              backgroundColor: '#130b10',
-              color: '#f0e8dc',
-              fontSize: '0.85rem',
-              border: '1px solid rgba(201,168,76,0.25)',
-              '& .MuiSelect-icon': { color: '#c9a84c' },
-              borderRadius: 2
-            }}
-          >
-            {USERS.map((user) => (
-              <MenuItem key={user.id} value={user.id} sx={{ fontSize: '0.85rem' }}>
-                {user.name}
-              </MenuItem>
-            ))}
-          </Select>
+              {/* CHIP DE USUARIO ACTIVO */}
+              <Box 
+                onClick={onOpenLogin}
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  px: 1.5, 
+                  py: 0.5, 
+                  borderRadius: 2, 
+                  backgroundColor: '#130b10',
+                  border: '1px solid rgba(201,168,76,0.2)',
+                  cursor: 'pointer',
+                  '&:hover': { borderColor: '#c9a84c' }
+                }}
+              >
+                <Avatar sx={{ bgcolor: isAdmin ? '#9b2335' : '#c9a84c', color: '#09050a', width: 26, height: 26, fontSize: '0.75rem', fontWeight: 'bold' }}>
+                  {currentUser.avatar || currentUser.name.charAt(0)}
+                </Avatar>
+                <Typography variant="body2" sx={{ color: '#f0e8dc', fontWeight: 600, fontSize: '0.85rem' }}>
+                  {currentUser.name}
+                </Typography>
+              </Box>
+
+              <Button
+                size="small"
+                onClick={onLogout}
+                startIcon={<LogoutIcon sx={{ fontSize: 16 }} />}
+                sx={{ color: '#7a6458', textTransform: 'none', '&:hover': { color: '#ef4444' } }}
+              >
+                Salir
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={onOpenLogin}
+              startIcon={<LoginIcon sx={{ color: '#09050a' }} />}
+              sx={{
+                backgroundColor: '#c9a84c',
+                color: '#09050a',
+                fontWeight: 800,
+                textTransform: 'none',
+                borderRadius: 1.5,
+                '&:hover': { backgroundColor: '#e0be6a' }
+              }}
+            >
+              Iniciar Sesión
+            </Button>
+          )}
         </Box>
       </Toolbar>
     </AppBar>
