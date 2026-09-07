@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: subastaya-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=SubastaYa2026!Password
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql/data
+    networks:
+      - subastaya-net
+
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: UserService/Dockerfile
+    container_name: subastaya-user-service
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SubastaYaDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+    networks:
+      - subastaya-net
+
+  wallet-service:
+    build:
+      context: ./backend
+      dockerfile: WalletService/Dockerfile
+    container_name: subastaya-wallet-service
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SubastaYaDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+    networks:
+      - subastaya-net
+
+  auction-service:
+    build:
+      context: ./backend
+      dockerfile: AuctionService/Dockerfile
+    container_name: subastaya-auction-service
+    ports:
+      - "5003:5003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SubastaYaDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+    networks:
+      - subastaya-net
+
+  auction-worker:
+    build:
+      context: ./backend
+      dockerfile: AuctionWorker/Dockerfile
+    container_name: subastaya-auction-worker
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SubastaYaDb;User Id=sa;Password=SubastaYa2026!Password;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+    networks:
+      - subastaya-net
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: ApiGateway/Dockerfile
+    container_name: subastaya-api-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - user-service
+      - wallet-service
+      - auction-service
+    networks:
+      - subastaya-net
+
+  frontend:
+    build:
+      context: ./frontend/subastaya-web
+      dockerfile: Dockerfile
+    container_name: subastaya-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - subastaya-net
+
+networks:
+  subastaya-net:
+    driver: bridge
+
+volumes:
+  sqlserver-data:

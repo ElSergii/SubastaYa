@@ -1,75 +1,89 @@
-# Plataforma de Venta de Entradas (React MUI JavaScript + .NET 9 + SQL Server)
+# SubastaYa - Plataforma de Subastas en Tiempo Real y Comercio Electrónico
 
-**Cátedra:** Proyecto de Software  
-**Docente:** Ing. Olivera Lucas  
-**Proyecto:** Plataforma corporativa de venta de entradas con arquitectura **React 18 + Material-UI (JavaScript/JSX)** en el Frontend, **ASP.NET Core 9 Web API (C#)** en el Backend y **SQL Server Express** como motor relacional.
+![.NET 9](https://img.shields.io/badge/.NET-9.0-purple)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-red)
+![React](https://img.shields.io/badge/React-19.0-blue)
+![MUI](https://img.shields.io/badge/MUI-Material%20UI-007FFF)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 
----
-
-## 📌 Descripción del Proyecto
-
-Sistema resiliente contra sobreventa de entradas para eventos masivos con control estricto de concurrencia y restauración automática de inventario.
-
-### Características Principales:
-1. **Frontend en React + Material-UI (JavaScript/JSX)**:
-   - Componentes modulares en `.jsx` (`Navbar`, `EventCatalog`, `SeatMap`, `ShoppingCart`, `AuditLogViewer`, `AdminPanel`).
-   - Diseño UI/UX moderno en modo oscuro con biblioteca **Material-UI (MUI)** (`@mui/material`, `@mui/icons-material`, `@emotion/react`).
-   - Temporizador regresivo visible (05:00 a 00:00) en el carrito de compras.
-   - Notificaciones emergentes (Snackbar/Toast) ante colisiones de concurrencia **HTTP 409 Conflict**.
-2. **Backend en ASP.NET Core 9.0 Web API (C#)**:
-   - Persistencia relacional con **Entity Framework Core 9.0** Code-First en **SQL Server Express** (`ProyectoSubastaDb`).
-   - **Control de Concurrencia (Optimistic Locking)**: Propiedad `[ConcurrencyCheck] Version` en la entidad `Seat`.
-   - **Background Worker (`BackgroundService`)**: Proceso automático en segundo plano que libera reservas expira a los 5 minutos.
-   - **Transacciones ACID**: Pasarela de pago simulada con rollback automático en caso de fallo.
-   - **Auditoría Inmutable (Precisión en ms)**: Registros inmutables con timestamp exacto en milisegundos (`TimestampMs`).
-   - **Documentación OpenAPI / Swagger UI**: Accesible en `http://localhost:5000/swagger`.
+**SubastaYa** es una plataforma universitaria completa, funcional y escalable diseñada para subastas en tiempo real y comercio electrónico con arquitectura basada en microservicios, garantía de concurrencia optimista, sistema de retención de fondos Escrow, regla Anti-Sniping y comunicación en tiempo real vía SignalR.
 
 ---
 
-## 📋 Directivas Corporativas Cumplidas
+## 🏗️ Arquitectura del Sistema
 
-1. **LOGS DE ERROR**: Todo log o excepción capturada inicia con el prefijo obligatorio `[CODE-ERROR] - `.
-2. **ITERACIONES**: Todos los bucles iteradores en C# (`foreach`, `for`) y React JavaScript (`map`, `forEach`) utilizan estrictamente la variable `idx_tk`.
-3. **MIDDLEWARE**: Interceptor global ASP.NET Core (`CorporateHeaderMiddleware`) que inyecta `X-Api-version: 1.0` en todas las respuestas HTTP.
-4. **FRONTEND**: Los contenedores principales de los componentes React renderizan el atributo `data-sys-render="auto"`.
+El sistema adopta una **Arquitectura Clean** dividida en los siguientes microservicios independientes:
 
----
-
-## 🚀 Guía de Instalación y Ejecución
-
-### 1. Requisitos Previos
-- **.NET 9 SDK** (`dotnet --version`)
-- **SQL Server Express** (Servicio `MSSQL$SQLEXPRESS` activo en Windows)
-- **Node.js** v18+ y **npm**
-
-### 2. Ejecutar Servidor Backend (.NET 9 Web API + SQL Server)
-```bash
-cd S:\ProyectoSubasta\backend
-dotnet run
 ```
-- ⚡ **API RESTful**: [http://localhost:5000](http://localhost:5000)
-- 📄 **Documentación Swagger UI**: [http://localhost:5000/swagger](http://localhost:5000/swagger)
-
-### 3. Ejecutar Cliente Frontend (React + Material-UI en JavaScript)
-En otra terminal:
-```bash
-cd S:\ProyectoSubasta\frontend
-npm install
-npm run dev
-```
-- 🌐 **Plataforma Web React**: [http://localhost:3000](http://localhost:3000)
-
----
-
-## 🧪 Prueba de Estrés de Concurrencia Simultánea
-
-Para ejecutar la prueba automatizada de $N$ peticiones asíncronas concurrentes al mismo asiento:
-```bash
-cd S:\ProyectoSubasta
-npx ts-node scripts/stress-test-net.ts
+SubastaYa/
+│
+├── backend/
+│   ├── ApiGateway/        # Puerta de entrada unificada para la API REST (Puerto 5000)
+│   ├── AuctionService/    # Subastas, Pujas, Categorías, SignalR y Anti-Sniping (Puerto 5003)
+│   ├── WalletService/     # Billeteras, Sistema Escrow y Ledger (Puerto 5002)
+│   ├── UserService/       # Gestión de Usuarios y Perfiles (Puerto 5001)
+│   └── AuctionWorker/     # Process Worker en segundo plano para liquidación automática
+│
+├── frontend/
+│   └── subastaya-web/     # Aplicación SPA React + MUI + Axios + SignalR (Puerto 3000)
+│
+├── tests/
+│   ├── AuctionService.Tests/ # Pruebas unitarias de subastas
+│   ├── WalletService.Tests/  # Pruebas unitarias de billetera y retenes
+│   └── IntegrationTests/     # Pruebas de integración y estrés de concurrencia
+│
+├── database/
+│   └── scripts/           # Scripts SQL y migraciones
+│
+├── docs/
+│   ├── arquitectura/      # Documentación de diseño
+│   ├── diagramas/         # Diagramas ER y de arquitectura
+│   └── capturas/          # Capturas para la presentación oral
+│
+├── docker-compose.yml     # Orquestador Docker Compose
+├── .gitignore
+└── README.md
 ```
 
-### Resultados de la Prueba:
-- **1 Petición** triunfa con `HTTP 201 Created` (Reserva activa por 5 min).
-- **19 Peticiones** retornan `HTTP 409 Conflict` ("Asiento ya no disponible").
-- **20 Registros** de auditoría inmutable guardados en SQL Server con precisión al milisegundo.
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Backend:** C#, .NET 9, ASP.NET Core Web API, Entity Framework Core, SignalR, Swagger/OpenAPI.
+- **Base de Datos:** Microsoft SQL Server 2022, EF Core Code-First con Migraciones y Optimistic Locking (`RowVersion`).
+- **Frontend:** React, JavaScript, MUI (Material UI & MUI X), Axios, Custom CSS.
+- **Infraestructura:** Docker & Docker Compose.
+
+---
+
+## 🚀 Guía de Inicio Rápido (FASE 1)
+
+### Requisitos Previos
+- .NET 9 SDK
+- Node.js (v20+)
+- Docker Desktop con Docker Compose
+
+### 1. Compilar la Solución .NET Localmente
+```bash
+dotnet build backend/SubastaYa.sln
+```
+
+### 2. Levantar la Infraestructura Completa con Docker Compose
+```bash
+docker compose up --build
+```
+
+---
+
+## 📌 Estado del Desarrollo (Fases del Proyecto)
+
+- [x] **FASE 1:** Estructura de repositorio, solución .NET, proyectos de microservicios, Docker Compose y SQL Server.
+- [ ] **FASE 2:** Entidades de Dominio, EF Core Code-First, Migraciones y Datos Semilla.
+- [ ] **FASE 3:** AuctionService (CRUD, Escrow Integration, Optimistic Locking, Anti-Sniping).
+- [ ] **FASE 4:** WalletService (Billeteras, Sistema Escrow y Ledger).
+- [ ] **FASE 5:** UserService y ApiGateway Routing.
+- [ ] **FASE 6:** SignalR Real-Time Bidding.
+- [ ] **FASE 7:** AuctionWorker Process.
+- [ ] **FASE 8:** AuditLog & Stress Test de Concurrencia.
+- [ ] **FASE 9:** Frontend React + MUI.
+- [ ] **FASE 10:** Integración Completa y Verificación End-to-End.
