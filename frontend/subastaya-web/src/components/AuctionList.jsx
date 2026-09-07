@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Grid, Box, Typography } from '@mui/material';
-import * as signalR from '@microsoft/signalr';
 import AuctionCard from './AuctionCard';
 import { getAuctions } from '../services/api';
 
@@ -105,54 +104,13 @@ export default function AuctionList({ activeUserId, onBidSuccess, pushNotif }) {
 
   useEffect(() => {
     fetchAuctionsList();
-
-    // Conexión SignalR en vivo con logs deshabilitados si está offline
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5000/hubs/auction')
-      .configureLogging(signalR.LogLevel.None)
-      .withAutomaticReconnect()
-      .build();
-
-    connection.start()
-      .then(() => {
-        // Evento: Nueva puja recibida
-        connection.on('ReceiveBid', (auctionId, winningUserId, currentPrice) => {
-          setAuctions((prev) =>
-            prev.map((auc) =>
-              auc.id === auctionId
-                ? { ...auc, winningUserId, currentPrice, bidCount: (auc.bidCount || 0) + 1 }
-                : auc
-            )
-          );
-          if (pushNotif) pushNotif('info', 'Puja en Vivo ⚡', `Subasta subió a $${currentPrice.toLocaleString('es-AR')}`);
-        });
-
-        // Evento: Anti-Sniping extendido
-        connection.on('AuctionExtended', (auctionId, newEndTime) => {
-          setAuctions((prev) =>
-            prev.map((auc) =>
-              auc.id === auctionId
-                ? { ...auc, endTime: newEndTime }
-                : auc
-            )
-          );
-          if (pushNotif) pushNotif('aviso', 'Regla Anti-Sniping ⏳', '¡Subasta extendida 2 minutos!');
-        });
-      })
-      .catch(() => {
-        // Silenciar reintentos cuando el backend no esté iniciado
-      });
-
-    return () => {
-      connection.stop();
-    };
   }, []);
 
   const totalPujas = auctions.reduce((acc, curr) => acc + (curr.bidCount || 0), 0);
 
   return (
     <Box sx={{ py: 4 }}>
-      {/* SECCION HERO INSPIRADA EN EL DISEÑO */}
+      {/* SECCION HERO */}
       <Box sx={{ mb: 6 }}>
         <Typography variant="caption" sx={{ letterSpacing: 3, color: '#9b2335', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 1 }}>
           PLATAFORMA DE SUBASTAS EN TIEMPO REAL
