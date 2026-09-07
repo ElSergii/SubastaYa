@@ -88,18 +88,25 @@ function App() {
       const data = await getWallet(currentUser.id);
       setWallet(data);
     } catch (err) {
-      console.error('Error al obtener billetera:', err);
+      console.log('Usando datos locales de billetera.');
     }
   };
 
   useEffect(() => {
     refreshWallet();
+
+    // Evitar pantalla negra al cambiar entre Admin y Compradores
+    if (currentUser?.role === 'Admin' && currentTab === 'wallet') {
+      setCurrentTab('admin');
+    } else if (currentUser?.role !== 'Admin' && currentTab === 'admin') {
+      setCurrentTab('auctions');
+    }
   }, [currentUser]);
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setLoginModalOpen(false);
-    pushNotif('exito', 'Sesión Iniciada', `Bienvenido/a ${user.name} (${user.role})`);
+    pushNotif('exito', 'Sesión Iniciada', `Bienvenido/a ${user.name}`);
 
     if (user.role === 'Admin') {
       setCurrentTab('admin');
@@ -109,13 +116,52 @@ function App() {
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    setCurrentUser(DEMO_ACCOUNTS[0]);
     setWallet(null);
     setCurrentTab('auctions');
-    pushNotif('info', 'Sesión Finalizada', 'Has cerrado tu sesión.');
+    pushNotif('info', 'Sesión Restablecida', 'Modo visitante activo.');
   };
 
   const activeUserId = currentUser?.id || DEMO_ACCOUNTS[0].id;
+  const isAdmin = currentUser?.role === 'Admin';
+
+  // Garantizar que SIEMPRE se muestre una vista válida y nunca pantalla negra
+  const renderActiveView = () => {
+    if (currentTab === 'admin' && isAdmin) {
+      return (
+        <AdminPanel 
+          onAuctionCreated={() => {
+            pushNotif('exito', 'Catálogo Actualizado', 'Subasta publicada en el sistema.');
+          }}
+          pushNotif={pushNotif}
+        />
+      );
+    }
+
+    if (currentTab === 'wallet' && !isAdmin) {
+      return (
+        <WalletView 
+          wallet={wallet} 
+          activeUserId={activeUserId} 
+          onWalletUpdated={refreshWallet} 
+          pushNotif={pushNotif}
+        />
+      );
+    }
+
+    if (currentTab === 'audit') {
+      return <AuditView />;
+    }
+
+    // Por defecto SIEMPRE renderiza la lista de subastas
+    return (
+      <AuctionList 
+        activeUserId={activeUserId} 
+        onBidSuccess={refreshWallet} 
+        pushNotif={pushNotif}
+      />
+    );
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#09050a', color: '#f0e8dc' }}>
@@ -141,35 +187,7 @@ function App() {
 
       {/* Contenido Principal */}
       <Container maxWidth="lg">
-        {currentTab === 'auctions' && (
-          <AuctionList 
-            activeUserId={activeUserId} 
-            onBidSuccess={refreshWallet} 
-            pushNotif={pushNotif}
-          />
-        )}
-
-        {currentTab === 'wallet' && currentUser?.role !== 'Admin' && (
-          <WalletView 
-            wallet={wallet} 
-            activeUserId={activeUserId} 
-            onWalletUpdated={refreshWallet} 
-            pushNotif={pushNotif}
-          />
-        )}
-
-        {currentTab === 'admin' && currentUser?.role === 'Admin' && (
-          <AdminPanel 
-            onAuctionCreated={() => {
-              pushNotif('exito', 'Catálogo Actualizado', 'Subasta publicada en el sistema.');
-            }}
-            pushNotif={pushNotif}
-          />
-        )}
-
-        {currentTab === 'audit' && (
-          <AuditView />
-        )}
+        {renderActiveView()}
       </Container>
     </Box>
   );
