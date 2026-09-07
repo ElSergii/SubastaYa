@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Box } from '@mui/material';
+import { Container, Box, Typography } from '@mui/material';
 import Navbar from './components/Navbar';
 import AuctionList from './components/AuctionList';
 import WalletView from './components/WalletView';
