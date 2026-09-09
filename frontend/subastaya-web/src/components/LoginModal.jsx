@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, Typography, Box, Button, TextField, Chip, Avatar } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import GavelIcon from '@mui/icons-material/Gavel';
+import { Modal, Button, Form, Badge } from 'react-bootstrap';
+import { FaGavel, FaLock, FaUserShield, FaUserCheck } from 'react-icons/fa6';
 
 export const DEMO_ACCOUNTS = [
   { 
@@ -53,187 +52,115 @@ export default function LoginModal({ open, onClose, onLoginSuccess }) {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{
-        style: {
-          backgroundColor: '#130b10',
-          border: '1px solid rgba(201, 168, 76, 0.3)',
-          borderRadius: 16,
-          boxShadow: '0 0 50px rgba(0,0,0,0.9), 0 0 30px rgba(201, 168, 76, 0.15)'
-        }
-      }}
-    >
-      <DialogContent sx={{ p: 4 }}>
+    <Modal show={open} onHide={onClose} centered size="md" className="login-modal-bootstrap">
+      <Modal.Body className="p-4">
         {/* CABECERA CON ISOTIPO */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box 
-            sx={{ 
-              width: 50, 
-              height: 50, 
-              borderRadius: '50%', 
-              backgroundColor: 'rgba(201, 168, 76, 0.1)', 
-              border: '1px solid #c9a84c', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              mb: 1.5 
-            }}
+        <div className="text-center mb-4">
+          <div 
+            className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+            style={{ width: 54, height: 54, backgroundColor: 'rgba(201, 168, 76, 0.12)', border: '1px solid #c9a84c' }}
           >
-            <GavelIcon sx={{ color: '#c9a84c', fontSize: 26 }} />
-          </Box>
-          <Typography className="serif" variant="h5" sx={{ fontWeight: 800, color: '#f0e8dc' }}>
-            Acceso a SubastaYa
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#7a6458', mt: 0.5 }}>
-            Selecciona tu cuenta o ingresa con credenciales
-          </Typography>
-        </Box>
+            <FaGavel style={{ color: '#c9a84c', fontSize: 24 }} />
+          </div>
+          <h4 className="serif fw-bold text-light mb-1">Acceso a SubastaYa</h4>
+          <p className="text-secondary small mb-0">Seleccioná tu cuenta o ingresá credenciales</p>
+        </div>
 
         {/* SELECTOR DE MODO DE INGRESO */}
-        <Box sx={{ display: 'flex', borderBottom: '1px solid rgba(201, 168, 76, 0.15)', mb: 3 }}>
-          <Button
-            fullWidth
+        <div className="d-flex border-bottom border-secondary mb-4">
+          <button
+            type="button"
+            className={`btn flex-fill py-2 rounded-0 fw-bold border-0 ${activeTab === 'demo' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
             onClick={() => setActiveTab('demo')}
-            sx={{
-              color: activeTab === 'demo' ? '#c9a84c' : '#7a6458',
-              borderBottom: activeTab === 'demo' ? '2px solid #c9a84c' : 'none',
-              borderRadius: 0,
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              textTransform: 'none',
-              pb: 1
-            }}
           >
             Cuentas Rápidas (Demo)
-          </Button>
-          <Button
-            fullWidth
+          </button>
+          <button
+            type="button"
+            className={`btn flex-fill py-2 rounded-0 fw-bold border-0 ${activeTab === 'form' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
             onClick={() => setActiveTab('form')}
-            sx={{
-              color: activeTab === 'form' ? '#c9a84c' : '#7a6458',
-              borderBottom: activeTab === 'form' ? '2px solid #c9a84c' : 'none',
-              borderRadius: 0,
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              textTransform: 'none',
-              pb: 1
-            }}
           >
             Ingreso con Email
-          </Button>
-        </Box>
+          </button>
+        </div>
 
         {activeTab === 'demo' ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <div className="d-flex flex-column gap-2">
             {DEMO_ACCOUNTS.map((acc) => (
-              <Box
+              <div
                 key={acc.id}
                 onClick={() => onLoginSuccess(acc)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  p: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: '#09050a',
-                  border: '1px solid rgba(201, 168, 76, 0.15)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: '#c9a84c',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(201, 168, 76, 0.1)'
-                  }
-                }}
+                className="d-flex align-items-center justify-content-between p-3 rounded glass-card border border-secondary"
+                style={{ cursor: 'pointer' }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: acc.role === 'Admin' ? '#9b2335' : '#1c0f15', color: '#c9a84c', width: 36, height: 36, fontSize: '0.9rem', fontWeight: 'bold' }}>
+                <div className="d-flex align-items-center gap-3">
+                  <div 
+                    className="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                    style={{ 
+                      width: 38, 
+                      height: 38, 
+                      backgroundColor: acc.role === 'Admin' ? 'rgba(155, 35, 53, 0.4)' : 'rgba(201, 168, 76, 0.15)',
+                      color: acc.role === 'Admin' ? '#fca5a5' : '#c9a84c',
+                      border: `1px solid ${acc.role === 'Admin' ? '#9b2335' : '#c9a84c'}`
+                    }}
+                  >
                     {acc.avatar}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#f0e8dc' }}>
-                      {acc.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#7a6458', display: 'block', fontSize: '0.7rem' }}>
-                      {acc.email}
-                    </Typography>
-                  </Box>
-                </Box>
+                  </div>
+                  <div>
+                    <h6 className="mb-0 text-light fw-bold">{acc.name}</h6>
+                    <small className="text-secondary mono" style={{ fontSize: '0.75rem' }}>{acc.email}</small>
+                  </div>
+                </div>
 
-                <Chip 
-                  label={acc.role} 
-                  size="small" 
-                  sx={{ 
-                    backgroundColor: acc.role === 'Admin' ? 'rgba(155, 35, 53, 0.3)' : 'rgba(201, 168, 76, 0.15)', 
-                    color: acc.role === 'Admin' ? '#fca5a5' : '#c9a84c', 
-                    fontWeight: 700,
-                    fontSize: '0.65rem'
-                  }} 
-                />
-              </Box>
+                <Badge 
+                  bg={acc.role === 'Admin' ? 'danger' : 'warning'} 
+                  className="text-dark fw-bold px-2 py-1"
+                >
+                  {acc.role === 'Admin' ? <FaUserShield className="me-1" /> : <FaUserCheck className="me-1" />}
+                  {acc.role}
+                </Badge>
+              </div>
             ))}
-          </Box>
+          </div>
         ) : (
-          <Box component="form" onSubmit={handleCustomLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Correo Electrónico"
-              type="email"
-              required
-              fullWidth
-              size="small"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="comprador1@test.com"
-              sx={{
-                backgroundColor: '#09050a',
-                input: { color: '#f0e8dc' },
-                label: { color: '#7a6458' },
-                '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-              }}
-            />
+          <Form onSubmit={handleCustomLogin} className="d-flex flex-column gap-3">
+            <Form.Group controlId="loginEmailInput">
+              <Form.Label>Correo Electrónico</Form.Label>
+              <Form.Control
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="comprador1@test.com"
+                autoComplete="email"
+                aria-label="Correo Electrónico"
+              />
+            </Form.Group>
 
-            <TextField
-              label="Contraseña"
-              type="password"
-              required
-              fullWidth
-              size="small"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              sx={{
-                backgroundColor: '#09050a',
-                input: { color: '#f0e8dc' },
-                label: { color: '#7a6458' },
-                '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-              }}
-            />
+            <Form.Group controlId="loginPasswordInput">
+              <Form.Label>Contraseña</Form.Label>
+              <Form.Control
+                name="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                aria-label="Contraseña"
+              />
+            </Form.Group>
 
             <Button
               type="submit"
-              variant="contained"
-              fullWidth
-              startIcon={<LockOutlinedIcon sx={{ color: '#09050a' }} />}
-              sx={{
-                backgroundColor: '#c9a84c',
-                color: '#09050a',
-                fontWeight: 800,
-                textTransform: 'none',
-                py: 1.2,
-                borderRadius: 1.5,
-                mt: 1,
-                '&:hover': { backgroundColor: '#e0be6a' }
-              }}
+              className="btn-gold py-2 mt-2 w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
             >
-              Iniciar Sesión
+              <FaLock /> Iniciar Sesión
             </Button>
-          </Box>
+          </Form>
         )}
-      </DialogContent>
-    </Dialog>
+      </Modal.Body>
+    </Modal>
   );
 }

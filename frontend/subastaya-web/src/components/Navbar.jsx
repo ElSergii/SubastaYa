@@ -1,184 +1,138 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Box, Button, Chip, Avatar } from '@mui/material';
-import GavelIcon from '@mui/icons-material/Gavel';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import HistoryIcon from '@mui/icons-material/History';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import LogoutIcon from '@mui/icons-material/Logout';
-import LoginIcon from '@mui/icons-material/Login';
+import { Navbar, Nav, Container, Badge, Button } from 'react-bootstrap';
+import { FaGavel, FaWallet, FaUserGear, FaClockRotateLeft, FaRightFromBracket, FaRightToBracket } from 'react-icons/fa6';
 
-export default function Navbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout }) {
+export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout }) {
   const isAdmin = currentUser?.role === 'Admin';
 
   return (
-    <AppBar position="sticky" className="glass-header" sx={{ elevation: 0, borderBottom: '1px solid rgba(201, 168, 76, 0.15)', background: 'rgba(9,5,10,0.95)' }}>
-      <Toolbar sx={{ justifyContent: 'space-between', maxW: '1200px', width: '100%', mx: 'auto', px: { xs: 2, md: 4 } }}>
+    <Navbar 
+      expand="lg" 
+      sticky="top"
+      className="glass-card py-2 border-0 border-bottom border-secondary mb-4"
+      style={{ backgroundColor: 'rgba(9, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}
+    >
+      <Container>
+        {/* Marca */}
+        <Navbar.Brand 
+          onClick={() => setCurrentTab('auctions')}
+          className="d-flex align-items-center gap-2 cursor-pointer pe-3"
+          style={{ cursor: 'pointer' }}
+        >
+          <div 
+            className="rounded-circle d-flex align-items-center justify-content-center border border-warning"
+            style={{ width: 34, height: 34, backgroundColor: 'rgba(201,168,76,0.15)' }}
+          >
+            <span className="text-warning fw-bold fs-6">✦</span>
+          </div>
+          <span className="serif fw-bold text-warning fs-4 tracking-tight">SubastaYa</span>
+        </Navbar.Brand>
+
+        <Navbar.Toggle aria-controls="subastaya-nav" className="border-secondary text-warning" />
         
-        {/* LOGO & TITULO */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => setCurrentTab('auctions')}>
-          <Box sx={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(201,168,76,0.1)' }}>
-            <Typography sx={{ color: '#c9a84c', fontSize: '15px', fontWeight: 'bold' }}>✦</Typography>
-          </Box>
-          <Typography className="serif" variant="h6" sx={{ fontWeight: 800, color: '#c9a84c', letterSpacing: 0.5, fontSize: '1.25rem' }}>
-            SubastaYa
-          </Typography>
-        </Box>
+        <Navbar.Collapse id="subastaya-nav">
+          {/* Navegación */}
+          <Nav className="me-auto gap-1">
+            <Nav.Link 
+              active={currentTab === 'auctions'} 
+              onClick={() => setCurrentTab('auctions')}
+              className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'auctions' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
+            >
+              <FaGavel /> Subastas
+            </Nav.Link>
 
-        {/* BOTONES DE NAVEGACION */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            onClick={() => setCurrentTab('auctions')}
-            startIcon={<GavelIcon sx={{ color: currentTab === 'auctions' ? '#c9a84c' : '#7a6458' }} />}
-            sx={{
-              color: currentTab === 'auctions' ? '#c9a84c' : '#7a6458',
-              borderBottom: currentTab === 'auctions' ? '2px solid #c9a84c' : 'none',
-              borderRadius: 0,
-              px: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              '&:hover': { color: '#e0be6a', background: 'rgba(201,168,76,0.05)' }
-            }}
-          >
-            Subastas
-          </Button>
-
-          {!isAdmin && (
-            <Button 
+            <Nav.Link 
+              active={currentTab === 'wallet'} 
               onClick={() => setCurrentTab('wallet')}
-              startIcon={<AccountBalanceWalletIcon sx={{ color: currentTab === 'wallet' ? '#c9a84c' : '#7a6458' }} />}
-              sx={{
-                color: currentTab === 'wallet' ? '#c9a84c' : '#7a6458',
-                borderBottom: currentTab === 'wallet' ? '2px solid #c9a84c' : 'none',
-                borderRadius: 0,
-                px: 2,
-                fontWeight: 600,
-                textTransform: 'none',
-                '&:hover': { color: '#e0be6a', background: 'rgba(201,168,76,0.05)' }
-              }}
+              className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'wallet' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
             >
-              Billetera
-            </Button>
-          )}
+              <FaWallet /> {isAdmin ? 'Billetera & Recaudación' : 'Billetera Escrow'}
+            </Nav.Link>
 
-          {isAdmin && (
-            <Button 
-              onClick={() => setCurrentTab('admin')}
-              startIcon={<AdminPanelSettingsIcon sx={{ color: currentTab === 'admin' ? '#c9a84c' : '#7a6458' }} />}
-              sx={{
-                color: currentTab === 'admin' ? '#c9a84c' : '#7a6458',
-                borderBottom: currentTab === 'admin' ? '2px solid #c9a84c' : 'none',
-                borderRadius: 0,
-                px: 2,
-                fontWeight: 600,
-                textTransform: 'none',
-                '&:hover': { color: '#e0be6a', background: 'rgba(201,168,76,0.05)' }
-              }}
-            >
-              Crear Subasta (Admin)
-            </Button>
-          )}
-
-          <Button 
-            onClick={() => setCurrentTab('audit')}
-            startIcon={<HistoryIcon sx={{ color: currentTab === 'audit' ? '#c9a84c' : '#7a6458' }} />}
-            sx={{
-              color: currentTab === 'audit' ? '#c9a84c' : '#7a6458',
-              borderBottom: currentTab === 'audit' ? '2px solid #c9a84c' : 'none',
-              borderRadius: 0,
-              px: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              '&:hover': { color: '#e0be6a', background: 'rgba(201,168,76,0.05)' }
-            }}
-          >
-            Auditoría
-          </Button>
-        </Box>
-
-        {/* ESTADO DE AUTENTICACION Y USUARIO */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {currentUser ? (
-            <>
-              {!isAdmin && wallet && (
-                <Chip 
-                  icon={<AccountBalanceWalletIcon style={{ color: '#4ade80', fontSize: 16 }} />} 
-                  label={`Disp: $${wallet.availableBalance.toLocaleString('es-AR')}`}
-                  sx={{ 
-                    backgroundColor: '#130b10', 
-                    color: '#4ade80', 
-                    fontWeight: 700, 
-                    border: '1px solid rgba(74, 222, 128, 0.3)',
-                    fontFamily: 'JetBrains Mono, monospace'
-                  }}
-                />
-              )}
-
-              {isAdmin && (
-                <Chip 
-                  icon={<AdminPanelSettingsIcon style={{ color: '#c9a84c', fontSize: 16 }} />} 
-                  label="ADMIN"
-                  sx={{ 
-                    backgroundColor: '#130b10', 
-                    color: '#c9a84c', 
-                    fontWeight: 700, 
-                    border: '1px solid rgba(201, 168, 76, 0.4)'
-                  }}
-                />
-              )}
-
-              {/* CHIP DE USUARIO ACTIVO */}
-              <Box 
-                onClick={onOpenLogin}
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1, 
-                  px: 1.5, 
-                  py: 0.5, 
-                  borderRadius: 2, 
-                  backgroundColor: '#130b10',
-                  border: '1px solid rgba(201,168,76,0.2)',
-                  cursor: 'pointer',
-                  '&:hover': { borderColor: '#c9a84c' }
-                }}
+            {isAdmin && (
+              <Nav.Link 
+                active={currentTab === 'admin'} 
+                onClick={() => setCurrentTab('admin')}
+                className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'admin' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
               >
-                <Avatar sx={{ bgcolor: isAdmin ? '#9b2335' : '#c9a84c', color: '#09050a', width: 26, height: 26, fontSize: '0.75rem', fontWeight: 'bold' }}>
-                  {currentUser.avatar || currentUser.name.charAt(0)}
-                </Avatar>
-                <Typography variant="body2" sx={{ color: '#f0e8dc', fontWeight: 600, fontSize: '0.85rem' }}>
-                  {currentUser.name}
-                </Typography>
-              </Box>
+                <FaUserGear /> Crear Subasta (Admin)
+              </Nav.Link>
+            )}
 
+            <Nav.Link 
+              active={currentTab === 'audit'} 
+              onClick={() => setCurrentTab('audit')}
+              className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'audit' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
+            >
+              <FaClockRotateLeft /> Auditoría ACID
+            </Nav.Link>
+          </Nav>
+
+          {/* Estado de usuario */}
+          <div className="d-flex align-items-center gap-3 mt-3 mt-lg-0">
+            {currentUser ? (
+              <>
+                {wallet && (
+                  <Badge 
+                    bg="dark" 
+                    className="border border-success text-success mono fw-bold px-3 py-2 d-flex align-items-center gap-2"
+                  >
+                    <FaWallet className="text-success" />
+                    <span>Disp: ${wallet.availableBalance.toLocaleString('es-AR')}</span>
+                  </Badge>
+                )}
+
+                {isAdmin && (
+                  <Badge 
+                    bg="dark" 
+                    className="border border-warning text-warning fw-bold px-3 py-2 d-flex align-items-center gap-2"
+                  >
+                    <FaUserGear /> VENDEDOR / ADMIN
+                  </Badge>
+                )}
+
+                {/* Perfil */}
+                <div 
+                  onClick={onOpenLogin}
+                  className="d-flex align-items-center gap-2 px-3 py-1 rounded glass-card border border-secondary"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div 
+                    className="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                    style={{ 
+                      width: 28, 
+                      height: 28, 
+                      backgroundColor: isAdmin ? '#9b2335' : '#c9a84c', 
+                      color: '#09050a',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    {currentUser.avatar || currentUser.name.charAt(0)}
+                  </div>
+                  <span className="text-light fw-bold small">{currentUser.name}</span>
+                </div>
+
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={onLogout}
+                  className="text-secondary text-decoration-none p-0 d-flex align-items-center gap-1 hover-danger ms-1"
+                >
+                  <FaRightFromBracket /> Salir
+                </Button>
+              </>
+            ) : (
               <Button
-                size="small"
-                onClick={onLogout}
-                startIcon={<LogoutIcon sx={{ fontSize: 16 }} />}
-                sx={{ color: '#7a6458', textTransform: 'none', '&:hover': { color: '#ef4444' } }}
+                size="sm"
+                onClick={onOpenLogin}
+                className="btn-gold d-flex align-items-center gap-2 px-3 py-2 fw-bold"
               >
-                Salir
+                <FaRightToBracket /> Iniciar Sesión
               </Button>
-            </>
-          ) : (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onOpenLogin}
-              startIcon={<LoginIcon sx={{ color: '#09050a' }} />}
-              sx={{
-                backgroundColor: '#c9a84c',
-                color: '#09050a',
-                fontWeight: 800,
-                textTransform: 'none',
-                borderRadius: 1.5,
-                '&:hover': { backgroundColor: '#e0be6a' }
-              }}
-            >
-              Iniciar Sesión
-            </Button>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+            )}
+          </div>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
   );
 }

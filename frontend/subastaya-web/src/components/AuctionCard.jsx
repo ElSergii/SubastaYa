@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardMedia, Typography, Button, TextField, Box, Chip, Alert } from '@mui/material';
-import TimerIcon from '@mui/icons-material/Timer';
-import GavelIcon from '@mui/icons-material/Gavel';
+import { Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
+import { FaClock, FaGavel, FaCrown, FaBolt, FaTriangleExclamation } from 'react-icons/fa6';
+import BidModal from './BidModal';
 import { placeBid } from '../services/api';
+import { 
+  calculateDynamicIncrement, 
+  calculateEscrowBreakdown, 
+  calculateAntiSnipingExtension 
+} from '../utils/auctionEngine';
 
-export default function AuctionCard({ auction, activeUserId, onBidSuccess, pushNotif }) {
+export default function AuctionCard({ auction, activeUserId, wallet, onBidSuccess, pushNotif }) {
   const [currentPrice, setCurrentPrice] = useState(auction.currentPrice);
   const [winningUserId, setWinningUserId] = useState(auction.winningUserId);
-  const [bidAmount, setBidAmount] = useState(auction.currentPrice + (auction.minimumIncrement || 1000));
+  const [timeLeft, setTimeLeft] = useState('');
+  const [diffSeconds, setDiffSeconds] = useState(0);
+  const [showBidModal, setShowBidModal] = useState(false);
+  const [cargando, setCargando] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [timeLeft, setTimeLeft] = useState('');
-  const [isCritical, setIsCritical] = useState(false);
-  const [cargando, setCargando] = useState(false);
+
+  // Fórmulas matemáticas del motor interno
+  const incInfo = calculateDynamicIncrement(currentPrice);
+  const nextMinBid = currentPrice + incInfo.increment;
+  const escrowInfo = calculateEscrowBreakdown(nextMinBid);
+  const antiSnipingInfo = calculateAntiSnipingExtension(diffSeconds, auction.bidCount || 0);
+
+  const isCurrentWinner = Boolean(winningUserId && String(winningUserId) === String(activeUserId));
+  const isExpired = auction.status === 'Finalizada' || auction.status === 'Desierta' || diffSeconds <= 0;
+  const isInsufficientFunds = Boolean(wallet && wallet.availableBalance < escrowInfo.totalEscrowRequired);
+
+  const isQuickBidDisabled = cargando || isCurrentWinner || isExpired || isInsufficientFunds;
 
   // Sincronizar estado interno si cambian las propiedades recibidas
   useEffect(() => {
@@ -22,181 +39,230 @@ export default function AuctionCard({ auction, activeUserId, onBidSuccess, pushN
 
   // Formateador de tiempo restante en vivo
   useEffect(() => {
+    if (auction.status === 'Finalizada' || auction.status === 'Desierta') return;
+
     const updateTimer = () => {
       const end = new Date(auction.endTime).getTime();
       const now = new Date().getTime();
       const diff = Math.max(0, Math.floor((end - now) / 1000));
+      setDiffSeconds(diff);
 
-      const minutes = Math.floor(diff / 60);
+      const hours = Math.floor(diff / 3600);
+      const minutes = Math.floor((diff % 3600) / 60);
       const seconds = diff % 60;
-      setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-
-      // Regla Anti-Sniping: Resaltar si quedan menos de 60s
-      setIsCritical(diff <= 60 && diff > 0);
+      
+      const format = (n) => n.toString().padStart(2, '0');
+      if (hours > 0) {
+        setTimeLeft(`${format(hours)}:${format(minutes)}:${format(seconds)}`);
+      } else {
+        setTimeLeft(`${format(minutes)}:${format(seconds)}`);
+      }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [auction.endTime]);
+  }, [auction.endTime, auction.status]);
 
-  // Sincronizar monto sugerido al actualizar precio
-  useEffect(() => {
-    setBidAmount(currentPrice + (auction.minimumIncrement || 1000));
-  }, [currentPrice, auction.minimumIncrement]);
+  // Puja Rápida Directa
+  const handleQuickBid = async (e) => {
+    e.stopPropagation();
+    if (isQuickBidDisabled) return;
 
-  const handleBidSubmit = async (e) => {
-    e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
     setCargando(true);
 
     try {
-      await placeBid(auction.id, activeUserId, Number(bidAmount));
-      setSuccessMessage('¡Puja registrada exitosamente!');
-      if (pushNotif) pushNotif('exito', 'Puja Exitosa', `Ofreciste $${Number(bidAmount).toLocaleString('es-AR')} en ${auction.title}`);
-      if (onBidSuccess) onBidSuccess();
+      await placeBid(auction.id, activeUserId, nextMinBid);
+      setCurrentPrice(nextMinBid);
+      setWinningUserId(activeUserId);
+
+      const msg = `¡Puja rápida de $${nextMinBid.toLocaleString('es-AR')} realizada exitosamente!`;
+      setSuccessMessage(msg);
+      if (pushNotif) pushNotif('exito', 'Puja Rápida Exitosa', msg);
+      if (onBidSuccess) onBidSuccess({ id: auction.id, currentPrice: nextMinBid, winningUserId: activeUserId });
+      setTimeout(() => setSuccessMessage(''), 3500);
     } catch (err) {
       if (err.response?.status === 409) {
-        const msg = '409 Conflict: Otro comprador envió una puja al mismo instante.';
+        const msg = '⚠️ Conflicto 409: Otro comprador envió una oferta al mismo tiempo.';
         setErrorMessage(msg);
         if (pushNotif) pushNotif('error', 'Conflicto 409', msg);
+        setTimeout(() => setErrorMessage(''), 4000);
       } else {
-        // Si el backend aún no está iniciado en Visual Studio, simular puja localmente sin romper el frontend
-        setCurrentPrice(Number(bidAmount));
+        // Simulación local si backend offline
+        setCurrentPrice(nextMinBid);
         setWinningUserId(activeUserId);
-        const msg = `¡Puja registrada! Nueva puja mayor: $${Number(bidAmount).toLocaleString('es-AR')}`;
+        const msg = `¡Puja rápida registrada por $${nextMinBid.toLocaleString('es-AR')}!`;
         setSuccessMessage(msg);
-        if (pushNotif) pushNotif('exito', 'Puja Registrada', msg);
+        if (pushNotif) pushNotif('exito', 'Puja Rápida', msg);
+        if (onBidSuccess) onBidSuccess({ id: auction.id, currentPrice: nextMinBid, winningUserId: activeUserId });
+        setTimeout(() => setSuccessMessage(''), 3500);
       }
     } finally {
       setCargando(false);
     }
   };
 
+  // Determinar color de badge de estado superior derecho
+  const getStatusBadge = () => {
+    if (auction.status === 'Finalizada' || isExpired) {
+      if (isCurrentWinner) {
+        return <Badge bg="success" className="fw-bold px-2 py-1 text-uppercase">🏆 ¡GANASTE!</Badge>;
+      }
+      return <Badge style={{ backgroundColor: '#a855f7', color: '#ffffff' }} className="fw-bold px-2 py-1 text-uppercase">FINALIZADA</Badge>;
+    }
+    if (auction.status === 'Desierta') {
+      return <Badge bg="secondary" className="fw-bold px-2 py-1 text-uppercase">DESIERTA</Badge>;
+    }
+    if (auction.status === 'Programada') {
+      return <Badge bg="info" className="text-dark fw-bold px-2 py-1 text-uppercase">PROGRAMADA</Badge>;
+    }
+    return <Badge bg="success" className="text-dark fw-bold px-2 py-1 text-uppercase">ACTIVA</Badge>;
+  };
+
   return (
-    <Card 
-      className={`glass-card ${isCritical ? 'critical-timer' : ''}`}
-      sx={{ color: '#f0e8dc', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
-    >
-      {/* Imagen con Gradiente */}
-      <Box sx={{ relative: 'relative', height: 180, overflow: 'hidden' }}>
-        <CardMedia
-          component="img"
-          height="180"
-          image={auction.imageUrl || 'https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=800&q=80'}
-          alt={auction.title}
-          sx={{ filter: 'brightness(0.7) saturate(0.95)', transition: 'transform 0.5s ease', '&:hover': { transform: 'scale(1.05)' } }}
-        />
-        <Box 
-          sx={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            background: 'linear-gradient(to top, #130b10 0%, rgba(19,11,16,0.4) 50%, transparent 100%)' 
-          }} 
-        />
-
-        {/* Badges superiores */}
-        <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
-          <span className="badge-gold">
-            {auction.categoryName || 'Subasta'}
-          </span>
-          <Chip 
-            label="⚡ En Vivo" 
-            size="small" 
-            sx={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)', fontSize: '0.7rem' }} 
+    <>
+      <Card 
+        className={`glass-card h-100 border-0 ${antiSnipingInfo.isCritical && auction.status === 'Activa' ? 'critical-timer' : ''}`}
+        style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#130b10', borderRadius: 12, overflow: 'hidden' }}
+      >
+        {/* CABECERA DE IMAGEN CON BADGES EN LAS ESQUINAS */}
+        <div className="position-relative overflow-hidden" style={{ height: 180 }}>
+          <Card.Img
+            variant="top"
+            src={auction.imageUrl || 'https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=800&q=80'}
+            alt={auction.title}
+            style={{ height: 180, objectFit: 'cover', filter: auction.status !== 'Activa' ? 'grayscale(0.3) brightness(0.7)' : 'brightness(0.85)' }}
           />
-        </Box>
 
-        {/* Reloj Temporizador */}
-        <Box sx={{ position: 'absolute', bottom: 12, right: 12 }}>
-          <Chip 
-            icon={<TimerIcon style={{ color: isCritical ? '#ef4444' : '#c9a84c', fontSize: 16 }} />} 
-            label={timeLeft} 
-            sx={{ 
-              backgroundColor: isCritical ? '#450a0a' : '#09050a',
-              color: isCritical ? '#fca5a5' : '#c9a84c',
-              fontWeight: 700,
-              fontFamily: 'JetBrains Mono, monospace',
-              border: `1px solid ${isCritical ? '#ef4444' : 'rgba(201,168,76,0.3)'}`
-            }}
-          />
-        </Box>
-      </Box>
+          {/* BADGE CATEGORÍA (IZQUIERDA) */}
+          <div className="position-absolute top-0 start-0 m-3">
+            <Badge bg="dark" className="border border-secondary text-light fw-bold px-2 py-1">
+              {auction.categoryName || 'General'}
+            </Badge>
+          </div>
 
-      {/* Contenido de la Subasta */}
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
-        <Typography className="serif" variant="h6" sx={{ fontWeight: 700, color: '#f0e8dc', mb: 0.5, lineHeight: 1.2 }}>
-          {auction.title}
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#7a6458', mb: 2, fontSize: '0.82rem', flexGrow: 1 }}>
-          {auction.description}
-        </Typography>
+          {/* BADGE ESTADO (DERECHA) */}
+          <div className="position-absolute top-0 end-0 m-3">
+            {getStatusBadge()}
+          </div>
+        </div>
 
-        {/* Bloque de Precios */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, p: 1.5, borderRadius: 2, backgroundColor: 'rgba(9,5,10,0.8)', border: '1px solid rgba(201,168,76,0.1)' }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: '#7a6458', fontSize: '0.7rem', textTransform: 'uppercase', tracking: 1 }}>Precio Base</Typography>
-            <Typography variant="body2" sx={{ color: '#f0e8dc', fontFamily: 'JetBrains Mono' }}>${auction.startingPrice.toLocaleString('es-AR')}</Typography>
-          </Box>
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="caption" sx={{ color: '#7a6458', fontSize: '0.7rem', textTransform: 'uppercase', tracking: 1 }}>Puja Mayor</Typography>
-            <Typography className="serif" variant="h6" sx={{ color: '#c9a84c', fontWeight: 800, lineHeight: 1 }}>
-              ${currentPrice.toLocaleString('es-AR')}
-            </Typography>
-          </Box>
-        </Box>
+        {/* CONTENIDO DE LA TARJETA */}
+        <Card.Body className="d-flex flex-column p-3">
+          <h5 className="serif fw-bold text-light mb-1">{auction.title}</h5>
+          <p className="text-secondary small mb-3 flex-grow-1" style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+            {auction.description}
+          </p>
 
-        {winningUserId && (
-          <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>
-            👑 Líder actual: Usuario #{winningUserId}
-          </Typography>
-        )}
+          {/* CAJA DE PRECIOS 2 COLUMNAS (PRECIO ACTUAL | PRÓXIMA MÍNIMA) */}
+          <div className="p-2.5 rounded mb-2 glass-card bg-dark border border-secondary" style={{ backgroundColor: '#09050a' }}>
+            <div className="row text-center g-0">
+              <div className="col-6 border-end border-secondary pe-2">
+                <span className="text-secondary small d-block text-uppercase fw-bold" style={{ fontSize: '0.62rem' }}>PRECIO ACTUAL</span>
+                <h5 className="serif text-warning fw-bold mb-0" style={{ color: '#eab308' }}>${currentPrice.toLocaleString('es-AR')}</h5>
+              </div>
+              <div className="col-6 ps-2">
+                <span className="text-secondary small d-block text-uppercase fw-bold" style={{ fontSize: '0.62rem' }}>PRÓXIMA MÍNIMA</span>
+                <h5 className="serif text-success fw-bold mb-0" style={{ color: '#22c55e' }}>${nextMinBid.toLocaleString('es-AR')}</h5>
+              </div>
+            </div>
+          </div>
 
-        {/* Alertas */}
-        {errorMessage && <Alert severity="error" sx={{ mb: 1, py: 0, fontSize: '0.75rem', backgroundColor: '#450a0a', color: '#fca5a5' }}>{errorMessage}</Alert>}
-        {successMessage && <Alert severity="success" sx={{ mb: 1, py: 0, fontSize: '0.75rem', backgroundColor: '#052e16', color: '#86efac' }}>{successMessage}</Alert>}
+          {/* FILA DE TIEMPO RESTANTE */}
+          <div className="d-flex justify-content-between align-items-center p-2 rounded mb-3 bg-dark border border-secondary" style={{ backgroundColor: '#09050a', fontSize: '0.8rem' }}>
+            <span className="text-secondary d-flex align-items-center gap-1">
+              👾 Restante:
+            </span>
+            <span className={`mono fw-bold ${antiSnipingInfo.isCritical && auction.status === 'Activa' ? 'text-danger' : 'text-light'}`}>
+              {auction.status === 'Finalizada' ? 'FINALIZADA' : auction.status === 'Desierta' ? 'DESIERTA' : timeLeft || '00:00'}
+            </span>
+          </div>
 
-        {/* Formulario de Oferta */}
-        <Box component="form" onSubmit={handleBidSubmit} sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-          <TextField
-            type="number"
-            size="small"
-            value={bidAmount}
-            onChange={(e) => setBidAmount(e.target.value)}
-            inputProps={{ min: currentPrice + 1 }}
-            sx={{
-              backgroundColor: '#09050a',
-              input: { color: '#c9a84c', fontFamily: 'JetBrains Mono', fontWeight: 600, fontSize: '0.85rem' },
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' },
-                '&:hover fieldset': { borderColor: 'rgba(201,168,76,0.5)' }
-              },
-              borderRadius: 1.5,
-              flexGrow: 1
-            }}
-          />
-          <Button 
-            type="submit" 
-            disabled={cargando}
-            variant="contained" 
-            startIcon={<GavelIcon sx={{ color: '#09050a' }} />}
-            sx={{ 
-              backgroundColor: '#c9a84c', 
-              color: '#09050a', 
-              fontWeight: 800, 
-              textTransform: 'none',
-              borderRadius: 1.5,
-              '&:hover': { backgroundColor: '#e0be6a' } 
-            }}
-          >
-            {cargando ? 'Pujando...' : 'Pujar'}
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+          {/* MUESTRA DE GANADOR O LÍDER ACTUAL */}
+          {isExpired && isCurrentWinner ? (
+            <Alert variant="success" dismissible onClose={() => setSuccessMessage('')} className="py-1 px-2 small mb-2 fw-bold text-success border-success">
+              🏆 ¡FELICIDADES! ¡GANASTE ESTA SUBASTA!
+            </Alert>
+          ) : isExpired && winningUserId ? (
+            <Alert variant="secondary" className="py-1 px-2 small mb-2 text-muted">
+              Subasta Finalizada
+            </Alert>
+          ) : isCurrentWinner ? (
+            <Alert variant="info" className="py-1 px-2 small mb-2 d-flex align-items-center gap-2">
+              <FaCrown className="text-warning" />
+              <span>Vas ganando esta subasta.</span>
+            </Alert>
+          ) : null}
+
+          {errorMessage && (
+            <Alert variant="danger" dismissible onClose={() => setErrorMessage('')} className="py-1 px-2 small mb-2">
+              {errorMessage}
+            </Alert>
+          )}
+          {successMessage && (
+            <Alert variant="success" dismissible onClose={() => setSuccessMessage('')} className="py-1 px-2 small mb-2">
+              {successMessage}
+            </Alert>
+          )}
+
+          {/* BOTONES DE ACCIÓN INFERIORES: PUJA RÁPIDA | OFERTAR / INFO */}
+          <div className="row g-2 mt-auto">
+            {/* BOTÓN PUJA RÁPIDA (IZQUIERDA) */}
+            <div className="col-7">
+              <Button
+                size="sm"
+                variant="dark"
+                disabled={isQuickBidDisabled}
+                onClick={handleQuickBid}
+                className="w-100 py-1.5 fw-bold border-secondary d-flex align-items-center justify-content-center gap-1"
+                style={{ backgroundColor: '#1c141c', color: isQuickBidDisabled ? '#6b7280' : '#eab308', fontSize: '0.78rem' }}
+              >
+                {cargando ? (
+                  <Spinner animation="border" size="sm" />
+                ) : isExpired && isCurrentWinner ? (
+                  <>🏆 Subasta Ganada</>
+                ) : isCurrentWinner ? (
+                  <>
+                    <FaCrown className="text-warning" /> Sos el Líder
+                  </>
+                ) : (
+                  <>
+                    <FaBolt className="text-warning" /> Puja Rápida (${nextMinBid.toLocaleString('es-AR')})
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* BOTÓN OFERTAR / INFO (DERECHA) - APERURA DEL BIDMODAL */}
+            <div className="col-5">
+              <Button
+                size="sm"
+                variant="outline-light"
+                onClick={() => setShowBidModal(true)}
+                className="w-100 py-1.5 fw-bold border-secondary"
+                style={{ fontSize: '0.78rem', backgroundColor: 'rgba(255,255,255,0.05)' }}
+              >
+                Ofertar / Info
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* MODAL DE PUJA EN VIVO ESTILO CAPTURA */}
+      <BidModal
+        show={showBidModal}
+        onHide={() => setShowBidModal(false)}
+        auction={{ ...auction, currentPrice, winningUserId }}
+        activeUserId={activeUserId}
+        wallet={wallet}
+        onBidSuccess={() => {
+          if (onBidSuccess) onBidSuccess();
+        }}
+        pushNotif={pushNotif}
+      />
+    </>
   );
 }

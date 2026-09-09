@@ -1,179 +1,187 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Box, Typography } from '@mui/material';
+import { Row, Col, Card, Badge, Spinner, Button } from 'react-bootstrap';
+import { FaGavel, FaLaptop, FaIcons, FaShirt, FaCar, FaCircle, FaSquare, FaCalculator } from 'react-icons/fa6';
 import AuctionCard from './AuctionCard';
-import { getAuctions } from '../services/api';
+import { getAuctions, LOCAL_AUCTIONS_STORE } from '../services/api';
 
-const now = new Date();
+export default function AuctionList({ activeUserId, wallet, onBidSuccess, pushNotif }) {
+  const [auctions, setAuctions] = useState(LOCAL_AUCTIONS_STORE);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [selectedStatus, setSelectedStatus] = useState('Todas');
 
-export const DEFAULT_SAMPLE_AUCTIONS = [
-  {
-    id: 'a1111111-1111-1111-1111-111111111111',
-    title: 'MacBook Pro M3 Max 16 Pulgadas 36GB RAM',
-    description: 'Computadora portátil profesional Apple M3 Max en estado impecable con caja original y cargador de 140W.',
-    imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Tecnología',
-    startingPrice: 30000,
-    currentPrice: 45000,
-    minimumIncrement: 2000,
-    winningUserId: '22222222-2222-2222-2222-222222222222',
-    endTime: new Date(now.getTime() + 25 * 60000).toISOString(),
-    status: 'Activa',
-    bidCount: 4
-  },
-  {
-    id: 'a2222222-2222-2222-2222-222222222222',
-    title: 'Reloj Rolex Submariner Date 1998 Original',
-    description: 'Edición especial de colección con certificado de autenticidad y mantenimiento oficial reciente.',
-    imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Coleccionables',
-    startingPrice: 100000,
-    currentPrice: 125000,
-    minimumIncrement: 5000,
-    winningUserId: '33333333-3333-3333-3333-333333333333',
-    endTime: new Date(now.getTime() + 45 * 1000).toISOString(), // Quedan 45s (Zona Crítica Anti-Sniping)
-    status: 'Activa',
-    bidCount: 6
-  },
-  {
-    id: 'a3333333-3333-3333-3333-333333333333',
-    title: 'Guitarra Gibson Les Paul Standard Reedición 1959',
-    description: 'Instrumento musical de alta gama con estuche rígido Custom Shop e inspección certificada.',
-    imageUrl: 'https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Coleccionables',
-    startingPrice: 80000,
-    currentPrice: 85000,
-    minimumIncrement: 2500,
-    winningUserId: null,
-    endTime: new Date(now.getTime() + 90 * 60000).toISOString(),
-    status: 'Activa',
-    bidCount: 2
-  },
-  {
-    id: 'a4444444-4444-4444-4444-444444444444',
-    title: 'Chaqueta de Cuero Vintage Schott NYC',
-    description: 'Chaqueta clásica de cuero vacuno talle M en excelente estado de conservación.',
-    imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Indumentaria',
-    startingPrice: 15000,
-    currentPrice: 28000,
-    minimumIncrement: 1000,
-    winningUserId: '22222222-2222-2222-2222-222222222222',
-    endTime: new Date(now.getTime() + 40 * 60000).toISOString(),
-    status: 'Activa',
-    bidCount: 5
-  },
-  {
-    id: 'a5555555-5555-5555-5555-555555555555',
-    title: 'Monopatín Eléctrico Xiaomi Pro 2',
-    description: 'Monopatín urbano con 45km de autonomía, freno de disco y pantalla digital integrada.',
-    imageUrl: 'https://images.unsplash.com/photo-1597086884617-64b58e72efcb?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Vehículos',
-    startingPrice: 50000,
-    currentPrice: 52000,
-    minimumIncrement: 2000,
-    winningUserId: null,
-    endTime: new Date(now.getTime() + 15 * 60000).toISOString(),
-    status: 'Activa',
-    bidCount: 1
-  },
-  {
-    id: 'a6666666-6666-6666-6666-666666666666',
-    title: 'Modelo a Escala Porsche 911 Carrera RS 1973',
-    description: 'Réplica de colección escala 1:18 en metal con detalles de interior artesanales.',
-    imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
-    categoryName: 'Vehículos',
-    startingPrice: 40000,
-    currentPrice: 45000,
-    minimumIncrement: 1500,
-    winningUserId: '33333333-3333-3333-3333-333333333333',
-    endTime: new Date(now.getTime() + 60 * 60000).toISOString(),
-    status: 'Activa',
-    bidCount: 3
-  }
-];
-
-export default function AuctionList({ activeUserId, onBidSuccess, pushNotif }) {
-  const [auctions, setAuctions] = useState(DEFAULT_SAMPLE_AUCTIONS);
-
-  const fetchAuctionsList = async () => {
-    const data = await getAuctions();
-    if (Array.isArray(data) && data.length > 0) {
-      setAuctions(data);
+  const fetchAuctionsList = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const data = await getAuctions();
+      if (Array.isArray(data) && data.length > 0) {
+        setAuctions([...data]);
+      }
+    } finally {
+      if (isInitial) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAuctionsList();
+    fetchAuctionsList(true);
+    const interval = setInterval(() => fetchAuctionsList(false), 2000);
+    return () => clearInterval(interval);
   }, []);
 
-  const totalPujas = auctions.reduce((acc, curr) => acc + (curr.bidCount || 0), 0);
+  // FILTRADO DINÁMICO DE SUBASTAS (100% FUNCIONAL Y EXACTO)
+  const filteredAuctions = auctions.filter((auc) => {
+    const categoryMatch = selectedCategory === 'Todas' || auc.categoryName === selectedCategory;
+    const statusMatch = selectedStatus === 'Todas' || 
+      (selectedStatus === 'Activas' && auc.status === 'Activa') ||
+      (selectedStatus === 'Finalizadas' && auc.status === 'Finalizada') ||
+      (selectedStatus === 'Desiertas' && auc.status === 'Desierta');
+    return categoryMatch && statusMatch;
+  });
 
   return (
-    <Box sx={{ py: 4 }}>
-      {/* SECCION HERO */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="caption" sx={{ letterSpacing: 3, color: '#9b2335', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 1 }}>
-          PLATAFORMA DE SUBASTAS EN TIEMPO REAL
-        </Typography>
-        <Typography className="serif" variant="h2" sx={{ fontWeight: 900, color: '#f0e8dc', lineHeight: 1.05, fontSize: { xs: '2.5rem', md: '4rem' } }}>
-          Subastas <em style={{ fontStyle: 'italic', color: '#c9a84c' }}>en vivo.</em>
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 2, color: '#7a6458', maxWidth: 600, fontSize: '0.95rem', lineHeight: 1.6 }}>
-          Participá en las subastas con reserva de fondos en Billetera Escrow, protección anti-sniping y control de concurrencia optimista en tiempo real.
-        </Typography>
+    <div className="py-4">
+      {/* CABECERA TITULO */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="serif fw-bold text-light mb-1 d-flex align-items-center gap-2">
+            <FaGavel className="text-warning" /> Catálogo de Subastas
+          </h2>
+          <p className="text-secondary small mb-0">
+            Participá en tiempo real en subastas activas de alta gama con garantía de protección y transparencia.
+          </p>
+        </div>
+        {loading && <Spinner animation="border" size="sm" variant="warning" />}
+      </div>
 
-        {/* METRICAS RAPIDAS */}
-        <Box sx={{ display: 'flex', gap: 5, mt: 4 }}>
-          <Box>
-            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
-              {auctions.length}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7a6458' }}>Subastas Activas</Typography>
-          </Box>
-          <Box>
-            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
-              {totalPujas}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7a6458' }}>Pujas Registradas</Typography>
-          </Box>
-          <Box>
-            <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#c9a84c' }}>
-              100%
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7a6458' }}>Transacciones ACID</Typography>
-          </Box>
-        </Box>
-      </Box>
+      {/* BARRA DE FILTROS (COMO EN LA CAPTURA DE PANTALLA) */}
+      <Card className="glass-card p-3 mb-4 border border-secondary" style={{ backgroundColor: '#130b10', borderRadius: 12 }}>
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          {/* GRUPO 1: CATEGORÍA */}
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <span className="text-secondary small fw-bold me-1" style={{ fontSize: '0.75rem' }}>CATEGORÍA:</span>
+            
+            <Button
+              size="sm"
+              onClick={() => setSelectedCategory('Todas')}
+              className={`rounded-pill px-3 py-1 fw-bold ${selectedCategory === 'Todas' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              Todas
+            </Button>
 
-      {/* LINEA DIVISORA DORADA */}
-      <Box className="gold-line" sx={{ mb: 5 }} />
+            <Button
+              size="sm"
+              onClick={() => setSelectedCategory('Tecnología')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedCategory === 'Tecnología' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaLaptop /> Tecnología
+            </Button>
 
-      {/* TITULO DE SECCION */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography className="serif" variant="h5" sx={{ fontWeight: 700, color: '#f0e8dc' }}>
-          Lotes en Subasta
-        </Typography>
-        <Typography variant="caption" sx={{ color: '#7a6458' }}>
-          {auctions.length} catálogo(s) disponible(s)
-        </Typography>
-      </Box>
+            <Button
+              size="sm"
+              onClick={() => setSelectedCategory('Coleccionables')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedCategory === 'Coleccionables' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaIcons /> Coleccionables
+            </Button>
 
-      {/* GRILLA DE SUBASTAS */}
-      <Grid container spacing={3}>
-        {auctions.map((auc) => (
-          <Grid item xs={12} sm={6} md={4} key={auc.id}>
-            <AuctionCard 
-              auction={auc} 
-              activeUserId={activeUserId} 
-              pushNotif={pushNotif}
-              onBidSuccess={() => {
-                fetchAuctionsList();
-                if (onBidSuccess) onBidSuccess();
-              }}
-            />
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+            <Button
+              size="sm"
+              onClick={() => setSelectedCategory('Indumentaria')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedCategory === 'Indumentaria' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaShirt /> Indumentaria
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => setSelectedCategory('Vehículos')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedCategory === 'Vehículos' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaCar /> Vehículos
+            </Button>
+          </div>
+
+          {/* GRUPO 2: ESTADO */}
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <span className="text-secondary small fw-bold me-1" style={{ fontSize: '0.75rem' }}>ESTADO:</span>
+            
+            <Button
+              size="sm"
+              onClick={() => setSelectedStatus('Todas')}
+              className={`rounded-pill px-3 py-1 fw-bold ${selectedStatus === 'Todas' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              Todas
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => setSelectedStatus('Activas')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedStatus === 'Activas' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaCircle className="text-success" style={{ fontSize: 8 }} /> Activas
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => setSelectedStatus('Finalizadas')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedStatus === 'Finalizadas' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaSquare style={{ color: '#a855f7', fontSize: 8 }} /> Finalizadas
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => setSelectedStatus('Desiertas')}
+              className={`rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1 ${selectedStatus === 'Desiertas' ? 'btn-success text-dark' : 'btn-dark text-secondary border-secondary'}`}
+              style={{ fontSize: '0.78rem' }}
+            >
+              <FaCircle className="text-secondary" style={{ fontSize: 8 }} /> Desiertas
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* GRILLA DE TARJETAS CON EL FORMATO EXACTO */}
+      {filteredAuctions.length === 0 ? (
+        <Card className="glass-card p-4 text-center">
+          <p className="text-secondary mb-0">No se encontraron subastas con los filtros seleccionados.</p>
+        </Card>
+      ) : (
+        <Row className="g-4">
+          {filteredAuctions.map((auc) => (
+            <Col xs={12} md={6} lg={4} key={auc.id}>
+              <AuctionCard 
+                auction={auc} 
+                activeUserId={activeUserId} 
+                wallet={wallet}
+                pushNotif={pushNotif}
+                onBidSuccess={(updatedAuction) => {
+                  if (updatedAuction && updatedAuction.id) {
+                    setAuctions((prev) => 
+                      prev.map((item) => 
+                        item.id === updatedAuction.id 
+                          ? { ...item, ...updatedAuction, bidCount: (item.bidCount || 0) + 1 } 
+                          : item
+                      )
+                    );
+                  } else {
+                    fetchAuctionsList();
+                  }
+                  if (onBidSuccess) onBidSuccess();
+                }}
+              />
+            </Col>
+          ))}
+        </Row>
+      )}
+    </div>
   );
 }

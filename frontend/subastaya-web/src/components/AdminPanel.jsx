@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, TextField, Button, Grid, MenuItem, Select, FormControl, InputLabel, Alert } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { Row, Col, Card, Form, Button, Alert, Badge, Spinner } from 'react-bootstrap';
+import { FaUserGear, FaCirclePlus, FaCalculator, FaShieldHalved, FaClock, FaTags } from 'react-icons/fa6';
 import { createAuction } from '../services/api';
+import { calculateAdminValuation } from '../utils/auctionEngine';
 
 const CATEGORIES = [
   { id: 'c1111111-1111-1111-1111-111111111111', name: 'Tecnología' },
@@ -26,8 +26,19 @@ export default function AdminPanel({ onAuctionCreated, pushNotif }) {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Asistente algorítmico de valuación en tiempo real
+  const valuationAssistant = calculateAdminValuation(formData.startingPrice, formData.categoryId);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'startingPrice') {
+        const val = calculateAdminValuation(value, updated.categoryId);
+        updated.minimumIncrement = val.recommendedIncrement;
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -47,7 +58,7 @@ export default function AdminPanel({ onAuctionCreated, pushNotif }) {
         categoryId: formData.categoryId,
         startingPrice: Number(formData.startingPrice),
         minimumIncrement: Number(formData.minimumIncrement),
-        sellerId: '11111111-1111-1111-1111-111111111111', // ID Vendedor Admin
+        sellerId: '11111111-1111-1111-1111-111111111111',
         startDate: now.toISOString(),
         endDate: end.toISOString()
       };
@@ -70,7 +81,6 @@ export default function AdminPanel({ onAuctionCreated, pushNotif }) {
 
       if (onAuctionCreated) onAuctionCreated();
     } catch (err) {
-      console.error(err);
       const msg = err.response?.data?.error || 'Error al crear la subasta.';
       setErrorMsg(msg);
       if (pushNotif) pushNotif('error', 'Error de Publicación', msg);
@@ -80,210 +90,199 @@ export default function AdminPanel({ onAuctionCreated, pushNotif }) {
   };
 
   return (
-    <Box sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <AdminPanelSettingsIcon sx={{ color: '#c9a84c', fontSize: 32 }} />
-        <Typography className="serif" variant="h4" sx={{ fontWeight: 800, color: '#f0e8dc' }}>
-          Panel de Administración & Publicación
-        </Typography>
-      </Box>
-      <Typography variant="body2" sx={{ color: '#7a6458', mb: 4 }}>
-        Espacio exclusivo para Administradores / Vendedores. Publique nuevos lotes en subasta en tiempo real.
-      </Typography>
+    <div className="py-4">
+      <div className="mb-4">
+        <h3 className="serif fw-bold text-light mb-1 d-flex align-items-center gap-2">
+          <FaUserGear className="text-warning" /> Panel de Administración & Publicación Inteligente
+        </h3>
+        <p className="text-secondary small">
+          Gestión y publicación de artículos con sugerencia automática de precios y márgenes de mercado.
+        </p>
+      </div>
 
-      <Grid container spacing={4}>
-        {/* FORMULARIO DE CREACION */}
-        <Grid item xs={12} md={7}>
-          <Card className="glass-card">
-            <CardContent sx={{ p: 3 }}>
-              <Typography className="serif" variant="h6" sx={{ color: '#f0e8dc', mb: 3, fontWeight: 700 }}>
-                Crear y Publicar Nueva Subasta
-              </Typography>
+      <Row className="g-4">
+        {/* FORMULARIO DE PUBLICACIÓN */}
+        <Col xs={12} lg={7}>
+          <Card className="glass-card p-3">
+            <Card.Body>
+              <h5 className="serif fw-bold text-light mb-3">Crear y Publicar Nueva Subasta</h5>
 
-              {successMsg && <Alert severity="success" sx={{ mb: 2, backgroundColor: '#052e16', color: '#86efac' }}>{successMsg}</Alert>}
-              {errorMsg && <Alert severity="error" sx={{ mb: 2, backgroundColor: '#450a0a', color: '#fca5a5' }}>{errorMsg}</Alert>}
+              {successMsg && <Alert variant="success" dismissible onClose={() => setSuccessMsg('')} className="py-2 small mb-3">{successMsg}</Alert>}
+              {errorMsg && <Alert variant="danger" dismissible onClose={() => setErrorMsg('')} className="py-2 small mb-3">{errorMsg}</Alert>}
 
-              <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <TextField
-                  label="Título del Artículo"
-                  name="title"
-                  required
-                  value={formData.title}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    backgroundColor: '#09050a',
-                    input: { color: '#f0e8dc' },
-                    label: { color: '#7a6458' },
-                    '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                  }}
-                />
+              <Form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
+                <Form.Group controlId="adminTitleInput">
+                  <Form.Label>Título del Artículo</Form.Label>
+                  <Form.Control
+                    name="title"
+                    required
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="Ej. Cámara Vintage Leica M3 1954"
+                    aria-label="Título del Artículo"
+                  />
+                </Form.Group>
 
-                <TextField
-                  label="Descripción Detallada"
-                  name="description"
-                  multiline
-                  rows={3}
-                  required
-                  value={formData.description}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    backgroundColor: '#09050a',
-                    textarea: { color: '#f0e8dc' },
-                    label: { color: '#7a6458' },
-                    '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                  }}
-                />
+                <Form.Group controlId="adminDescriptionInput">
+                  <Form.Label>Descripción Detallada</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="description"
+                    required
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Detalles sobre el estado del producto y certificados de autenticidad..."
+                    aria-label="Descripción Detallada"
+                  />
+                </Form.Group>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel sx={{ color: '#7a6458' }}>Categoría</InputLabel>
-                      <Select
-                        name="categoryId"
-                        value={formData.categoryId}
+                <Row className="g-2">
+                  <Col xs={12} sm={6}>
+                    <Form.Group controlId="adminCategorySelect">
+                      <Form.Label>Categoría</Form.Label>
+                      <Form.Select 
+                        name="categoryId" 
+                        value={formData.categoryId} 
                         onChange={handleChange}
-                        sx={{
-                          backgroundColor: '#09050a',
-                          color: '#f0e8dc',
-                          '& .MuiSelect-icon': { color: '#c9a84c' },
-                          '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' }
-                        }}
+                        aria-label="Categoría"
                       >
                         {CATEGORIES.map((cat) => (
-                          <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
 
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Duración (Minutos)"
-                      name="durationMinutes"
-                      type="number"
-                      required
-                      value={formData.durationMinutes}
-                      onChange={handleChange}
-                      size="small"
-                      fullWidth
-                      sx={{
-                        backgroundColor: '#09050a',
-                        input: { color: '#c9a84c', fontFamily: 'JetBrains Mono' },
-                        label: { color: '#7a6458' },
-                        '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                      }}
-                    />
-                  </Grid>
-                </Grid>
+                  <Col xs={12} sm={6}>
+                    <Form.Group controlId="adminDurationInput">
+                      <Form.Label>Duración (Minutos)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="durationMinutes"
+                        required
+                        value={formData.durationMinutes}
+                        onChange={handleChange}
+                        aria-label="Duración (Minutos)"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Precio Inicial ($)"
-                      name="startingPrice"
-                      type="number"
-                      required
-                      value={formData.startingPrice}
-                      onChange={handleChange}
-                      size="small"
-                      fullWidth
-                      sx={{
-                        backgroundColor: '#09050a',
-                        input: { color: '#4ade80', fontFamily: 'JetBrains Mono', fontWeight: 700 },
-                        label: { color: '#7a6458' },
-                        '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                      }}
-                    />
-                  </Grid>
+                <Row className="g-2">
+                  <Col xs={12} sm={6}>
+                    <Form.Group controlId="adminStartingPriceInput">
+                      <Form.Label>Precio Base ($)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="startingPrice"
+                        required
+                        value={formData.startingPrice}
+                        onChange={handleChange}
+                        className="text-success fw-bold"
+                        aria-label="Precio Base ($)"
+                      />
+                    </Form.Group>
+                  </Col>
 
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Incremento Mínimo ($)"
-                      name="minimumIncrement"
-                      type="number"
-                      required
-                      value={formData.minimumIncrement}
-                      onChange={handleChange}
-                      size="small"
-                      fullWidth
-                      sx={{
-                        backgroundColor: '#09050a',
-                        input: { color: '#c9a84c', fontFamily: 'JetBrains Mono' },
-                        label: { color: '#7a6458' },
-                        '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                      }}
-                    />
-                  </Grid>
-                </Grid>
+                  <Col xs={12} sm={6}>
+                    <Form.Group controlId="adminMinIncrementInput">
+                      <Form.Label>Incremento Mínimo ($)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="minimumIncrement"
+                        required
+                        value={formData.minimumIncrement}
+                        onChange={handleChange}
+                        className="text-warning fw-bold"
+                        aria-label="Incremento Mínimo ($)"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-                <TextField
-                  label="URL Imagen de Producto"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    backgroundColor: '#09050a',
-                    input: { color: '#f0e8dc' },
-                    label: { color: '#7a6458' },
-                    '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(201,168,76,0.2)' } }
-                  }}
-                />
+                <Form.Group controlId="adminImageUrlInput">
+                  <Form.Label>URL Imagen de Producto</Form.Label>
+                  <Form.Control
+                    name="imageUrl"
+                    value={formData.imageUrl}
+                    onChange={handleChange}
+                    aria-label="URL Imagen de Producto"
+                  />
+                </Form.Group>
 
                 <Button
                   type="submit"
                   disabled={cargando}
-                  variant="contained"
-                  startIcon={<AddCircleOutlineIcon sx={{ color: '#09050a' }} />}
-                  sx={{
-                    backgroundColor: '#c9a84c',
-                    color: '#09050a',
-                    fontWeight: 800,
-                    textTransform: 'none',
-                    py: 1.2,
-                    borderRadius: 1.5,
-                    '&:hover': { backgroundColor: '#e0be6a' }
-                  }}
+                  className="btn-gold py-2 mt-2 fw-bold d-flex align-items-center justify-content-center gap-2"
                 >
-                  {cargando ? 'Publicando...' : 'Publicar Subasta'}
+                  {cargando ? (
+                    <>
+                      <Spinner animation="border" size="sm" />
+                      Publicando...
+                    </>
+                  ) : (
+                    <>
+                      <FaCirclePlus /> Publicar Subasta en Vivo
+                    </>
+                  )}
                 </Button>
-              </Box>
-            </CardContent>
+              </Form>
+            </Card.Body>
           </Card>
-        </Grid>
+        </Col>
 
-        {/* METRICAS DEL SISTEMA ADMIN */}
-        <Grid item xs={12} md={5}>
-          <Card className="glass-card" sx={{ mb: 3 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography className="serif" variant="h6" sx={{ color: '#c9a84c', mb: 2, fontWeight: 700 }}>
-                Estadísticas de Administración
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#7a6458', mb: 3 }}>
-                El rol de Administrador supervisa la creación de catálogos y el correcto cierre atómico de subastas.
-              </Typography>
+        {/* ASISTENTE Y SUGERENCIA DE PRECIOS */}
+        <Col xs={12} lg={5}>
+          <Card className="glass-card p-3 mb-3 border border-secondary">
+            <Card.Body>
+              <h5 className="serif fw-bold text-warning mb-3 d-flex align-items-center gap-2">
+                <FaCalculator /> Asistente de Precio de Mercado
+              </h5>
+              <p className="text-secondary small mb-3">
+                Sugerencia de valores de mercado para maximizar la visibilidad y participación:
+              </p>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ p: 2, backgroundColor: '#09050a', borderRadius: 2, border: '1px solid rgba(201,168,76,0.1)' }}>
-                  <Typography variant="caption" sx={{ color: '#7a6458' }}>ESTADO DE WORKER BACKGROUND</Typography>
-                  <Typography variant="body1" sx={{ color: '#4ade80', fontWeight: 700 }}>
-                    ● En Ejecución (Chequeo cada 10s)
-                  </Typography>
-                </Box>
+              <div className="d-flex flex-column gap-2 mb-3">
+                <div className="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Valor Retail Estimado:</span>
+                  <span className="mono text-info fw-bold">${valuationAssistant.recommendedRetail.toLocaleString('es-AR')}</span>
+                </div>
 
-                <Box sx={{ p: 2, backgroundColor: '#09050a', borderRadius: 2, border: '1px solid rgba(201,168,76,0.1)' }}>
-                  <Typography variant="caption" sx={{ color: '#7a6458' }}>REGLA ANTI-SNIPING</Typography>
-                  <Typography variant="body1" sx={{ color: '#c9a84c', fontWeight: 700 }}>
-                    +2 min extensión automática
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
+                <div className="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Incremento Dinámico Sugerido:</span>
+                  <span className="mono text-warning fw-bold">+${valuationAssistant.recommendedIncrement.toLocaleString('es-AR')}</span>
+                </div>
+
+                <div className="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                  <span className="text-secondary small">Precio Reserva Sugerido:</span>
+                  <span className="mono text-success fw-bold">${valuationAssistant.suggestedReservePrice.toLocaleString('es-AR')}</span>
+                </div>
+              </div>
+
+              <small className="text-muted mono d-block" style={{ fontSize: '0.72rem' }}>
+                <FaShieldHalved className="text-warning me-1" /> Tramo asignado: {valuationAssistant.tierLabel}
+              </small>
+            </Card.Body>
           </Card>
-        </Grid>
-      </Grid>
-    </Box>
+
+          <Card className="glass-card p-3 border border-secondary">
+            <Card.Body>
+              <h6 className="serif fw-bold text-light mb-2">Parámetros del Sistema</h6>
+              <div className="d-flex flex-column gap-2 small text-secondary">
+                <div className="d-flex align-items-center justify-content-between border-bottom border-secondary pb-1">
+                  <span>Worker Background Status:</span>
+                  <Badge bg="success" className="text-dark">Activo (10s)</Badge>
+                </div>
+                <div className="d-flex align-items-center justify-content-between">
+                  <span>Anti-Sniping Rule:</span>
+                  <span className="mono text-warning">+60s dynamic extension</span>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Box, Typography } from '@mui/material';
+import { Container } from 'react-bootstrap';
 import Navbar from './components/Navbar';
 import AuctionList from './components/AuctionList';
 import WalletView from './components/WalletView';
@@ -9,98 +9,105 @@ import LoginModal, { DEMO_ACCOUNTS } from './components/LoginModal';
 import { getWallet } from './services/api';
 import './App.css';
 
-// HOOK DE NOTIFICACIONES FLOTANTES ESTILO TICKETSYS
+// HOOK DE NOTIFICACIONES FLOTANTES CON BOOTSTRAP TOAST Y BOTÓN DE CIERRE
 function useNotif() {
   const [lista, setLista] = useState([]);
+  
+  const dismiss = useCallback((id) => {
+    setLista((p) => p.map((n) => (n.id === id ? { ...n, saliendo: true } : n)));
+    setTimeout(() => setLista((p) => p.filter((n) => n.id !== id)), 280);
+  }, []);
+
   const push = useCallback((tipo, titulo, mensaje) => {
-    const id = crypto.randomUUID();
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     setLista((p) => [...p, { id, tipo, titulo, mensaje }]);
     setTimeout(() => {
-      setLista((p) => p.map((n) => (n.id === id ? { ...n, saliendo: true } : n)));
-      setTimeout(() => setLista((p) => p.filter((n) => n.id !== id)), 280);
-    }, 4200);
-  }, []);
-  return { lista, push };
+      dismiss(id);
+    }, 5000);
+  }, [dismiss]);
+
+  return { lista, push, dismiss };
 }
 
-function Notificaciones({ lista }) {
+function Notificaciones({ lista, dismiss }) {
   const iconos = { exito: '✓', error: '✕', aviso: '⚠', info: 'ℹ' };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         position: 'fixed',
         top: 20,
         right: 20,
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.5,
+        gap: 12,
         pointerEvents: 'none',
-        width: 320,
+        width: 330,
       }}
     >
       {lista.map((n) => (
-        <Box
+        <div
           key={n.id}
-          className={`toast-in ${n.saliendo ? 'toast-out' : ''}`}
-          sx={{
+          className={`toast-in ${n.saliendo ? 'toast-out' : ''} p-3 rounded glass-card shadow-lg d-flex align-items-start justify-content-between gap-2`}
+          style={{
             pointerEvents: 'auto',
-            display: 'flex',
-            gap: 1.5,
-            p: 2,
-            borderRadius: 2,
-            fontSize: '0.85rem',
-            backgroundColor: 'rgba(19,11,16,0.96)',
-            backdropFilter: 'blur(16px)',
-            border: `1px solid ${n.tipo === 'exito' ? '#22c55e' : n.tipo === 'error' ? '#ef4444' : '#c9a84c'}`,
+            backgroundColor: 'rgba(19, 11, 16, 0.96)',
+            borderColor: n.tipo === 'exito' ? '#22c55e' : n.tipo === 'error' ? '#ef4444' : '#c9a84c',
             color: '#f0e8dc',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
           }}
         >
-          <Typography sx={{ fontWeight: 'bold', color: n.tipo === 'exito' ? '#4ade80' : n.tipo === 'error' ? '#fca5a5' : '#c9a84c' }}>
-            {iconos[n.tipo]}
-          </Typography>
-          <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#f0e8dc', leading: 1.2 }}>
-              {n.titulo}
-            </Typography>
-            <Typography sx={{ opacity: 0.8, fontSize: '0.75rem', color: '#94a3b8', mt: 0.5 }}>
-              {n.mensaje}
-            </Typography>
-          </Box>
-        </Box>
+          <div className="d-flex align-items-start gap-3">
+            <span className={`fw-bold fs-5 ${n.tipo === 'exito' ? 'text-success' : n.tipo === 'error' ? 'text-danger' : 'text-warning'}`}>
+              {iconos[n.tipo]}
+            </span>
+            <div>
+              <h6 className="fw-bold mb-1 small text-light">{n.titulo}</h6>
+              <p className="text-secondary small mb-0" style={{ fontSize: '0.78rem' }}>{n.mensaje}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => dismiss(n.id)}
+            className="btn btn-link text-secondary p-0 border-0 ms-2 lh-1 text-decoration-none"
+            style={{ fontSize: '1.2rem', cursor: 'pointer' }}
+            title="Cerrar notificación"
+            aria-label="Cerrar notificación"
+          >
+            &times;
+          </button>
+        </div>
       ))}
-    </Box>
+    </div>
   );
 }
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(DEMO_ACCOUNTS[0]); // Ana García por defecto
+  const [currentUser, setCurrentUser] = useState(DEMO_ACCOUNTS[0]);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [currentTab, setCurrentTab] = useState('auctions');
-  const { lista: notifs, push: pushNotif } = useNotif();
+  const { lista: notifs, push: pushNotif, dismiss: dismissNotif } = useNotif();
 
   const refreshWallet = async () => {
-    if (!currentUser || currentUser.role === 'Admin') return;
+    if (!currentUser) return;
     try {
       const data = await getWallet(currentUser.id);
       setWallet(data);
-    } catch (err) {
-      console.log('Usando datos locales de billetera.');
+    } catch {
+      // Silenciar logs de fallback local
     }
   };
 
   useEffect(() => {
     refreshWallet();
 
-    // Evitar pantalla negra al cambiar entre Admin y Compradores
-    if (currentUser?.role === 'Admin' && currentTab === 'wallet') {
-      setCurrentTab('admin');
-    } else if (currentUser?.role !== 'Admin' && currentTab === 'admin') {
+    if (currentUser?.role !== 'Admin' && currentTab === 'admin') {
       setCurrentTab('auctions');
     }
+
+    const interval = setInterval(refreshWallet, 2000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const handleLoginSuccess = (user) => {
@@ -125,7 +132,6 @@ function App() {
   const activeUserId = currentUser?.id || DEMO_ACCOUNTS[0].id;
   const isAdmin = currentUser?.role === 'Admin';
 
-  // Garantizar que SIEMPRE se muestre una vista válida y nunca pantalla negra
   const renderActiveView = () => {
     if (currentTab === 'admin' && isAdmin) {
       return (
@@ -138,11 +144,12 @@ function App() {
       );
     }
 
-    if (currentTab === 'wallet' && !isAdmin) {
+    if (currentTab === 'wallet') {
       return (
         <WalletView 
           wallet={wallet} 
           activeUserId={activeUserId} 
+          currentUser={currentUser}
           onWalletUpdated={refreshWallet} 
           pushNotif={pushNotif}
         />
@@ -150,13 +157,13 @@ function App() {
     }
 
     if (currentTab === 'audit') {
-      return <AuditView />;
+      return <AuditView currentUser={currentUser} activeUserId={activeUserId} />;
     }
 
-    // Por defecto SIEMPRE renderiza la lista de subastas
     return (
       <AuctionList 
         activeUserId={activeUserId} 
+        wallet={wallet}
         onBidSuccess={refreshWallet} 
         pushNotif={pushNotif}
       />
@@ -164,9 +171,9 @@ function App() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#09050a', color: '#f0e8dc' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#09050a', color: '#f0e8dc' }}>
       {/* Sistema de Notificaciones Flotante */}
-      <Notificaciones lista={notifs} />
+      <Notificaciones lista={notifs} dismiss={dismissNotif} />
 
       {/* Modal de Inicio de Sesión */}
       <LoginModal 
@@ -175,7 +182,7 @@ function App() {
         onLoginSuccess={handleLoginSuccess}
       />
 
-      {/* Barra de Navegación con Login/Logout */}
+      {/* Barra de Navegación Bootstrap */}
       <Navbar 
         currentUser={currentUser} 
         wallet={wallet} 
@@ -186,10 +193,10 @@ function App() {
       />
 
       {/* Contenido Principal */}
-      <Container maxWidth="lg">
+      <Container className="pb-5">
         {renderActiveView()}
       </Container>
-    </Box>
+    </div>
   );
 }
 
