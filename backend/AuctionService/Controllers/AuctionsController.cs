@@ -123,7 +123,7 @@ public class AuctionsController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Requisito expreso del prompt: Conflictos de concurrencia devuelven HTTP 409 Conflict
+            // Conflictos de concurrencia devuelven HTTP 409 Conflict
             return StatusCode(StatusCodes.Status409Conflict, new
             {
                 error = "Conflicto de concurrencia: Otro usuario realizó una puja sobre esta subasta simultáneamente.",
