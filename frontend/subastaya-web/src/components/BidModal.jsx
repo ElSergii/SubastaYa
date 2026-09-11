@@ -485,7 +485,7 @@ export default function BidModal({ show, onHide, auction, activeUserId, wallet, 
                   {bidHistory.map((item, idx) => {
                     const isTopBidder = idx === 0;
                     const isMyBid = String(item.userId) === String(activeUserId);
-                    const name = item.postor || `Usuario #${String(item.userId).substring(0, 8)}`;
+                    const name = item.postor || `Usuario #${item.userId}`;
                     const amount = Number(item.monto || item.amount) || 0;
 
                     return (

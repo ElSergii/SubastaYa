@@ -122,10 +122,10 @@ export default function AuditView({ currentUser, activeUserId }) {
                       </Badge>
                     </td>
                     <td className="text-light">
-                      <FaHashtag className="text-secondary" /> {log.auctionId?.substring(0, 8)}...
+                      <FaHashtag className="text-secondary" /> #{log.auctionId}
                     </td>
                     <td className="text-secondary">
-                      Usuario #{log.userId?.substring(0, 8)}
+                      Usuario #{log.userId}
                     </td>
                     <td>
                       <span className={`fw-bold ${integrity.deltaClass}`}>

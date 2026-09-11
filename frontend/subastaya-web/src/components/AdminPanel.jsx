@@ -5,10 +5,10 @@ import { createAuction } from '../services/api';
 import { calculateAdminValuation } from '../utils/auctionEngine';
 
 const CATEGORIES = [
-  { id: 'c1111111-1111-1111-1111-111111111111', name: 'Tecnología' },
-  { id: 'c2222222-2222-2222-2222-222222222222', name: 'Coleccionables' },
-  { id: 'c3333333-3333-3333-3333-333333333333', name: 'Indumentaria' },
-  { id: 'c4444444-4444-4444-4444-444444444444', name: 'Vehículos' },
+  { id: '1', name: 'Tecnología' },
+  { id: '2', name: 'Coleccionables' },
+  { id: '3', name: 'Indumentaria' },
+  { id: '4', name: 'Vehículos' },
 ];
 
 export default function AdminPanel({ onAuctionCreated, pushNotif }) {
@@ -58,7 +58,7 @@ export default function AdminPanel({ onAuctionCreated, pushNotif }) {
         categoryId: formData.categoryId,
         startingPrice: Number(formData.startingPrice),
         minimumIncrement: Number(formData.minimumIncrement),
-        sellerId: '11111111-1111-1111-1111-111111111111',
+        sellerId: '40',
         startDate: now.toISOString(),
         endDate: end.toISOString()
       };

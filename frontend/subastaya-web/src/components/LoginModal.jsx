@@ -4,28 +4,28 @@ import { FaGavel, FaLock, FaUserShield, FaUserCheck } from 'react-icons/fa6';
 
 export const DEMO_ACCOUNTS = [
   { 
-    id: '22222222-2222-2222-2222-222222222222', 
+    id: '10', 
     name: 'Ana García (Comprador 1)', 
     email: 'comprador1@test.com', 
     role: 'Comprador', 
     avatar: 'A' 
   },
   { 
-    id: '33333333-3333-3333-3333-333333333333', 
+    id: '20', 
     name: 'María López (Comprador 2)', 
     email: 'comprador2@test.com', 
     role: 'Comprador', 
     avatar: 'M' 
   },
   { 
-    id: '44444444-4444-4444-4444-444444444444', 
+    id: '30', 
     name: 'Carlos Sin Fondos', 
     email: 'sinfondos@test.com', 
     role: 'Comprador', 
     avatar: 'C' 
   },
   { 
-    id: '11111111-1111-1111-1111-111111111111', 
+    id: '40', 
     name: 'Admin SubastaYa (Vendedor)', 
     email: 'vendedor@test.com', 
     role: 'Admin', 

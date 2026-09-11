@@ -22,10 +22,10 @@ CREATE TABLE [Users] (
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Email', N'FullName', N'Username') AND [object_id] = OBJECT_ID(N'[Users]'))
     SET IDENTITY_INSERT [Users] ON;
 INSERT INTO [Users] ([Id], [CreatedAt], [Email], [FullName], [Username])
-VALUES ('11111111-1111-1111-1111-111111111111', '2026-01-01T00:00:00.0000000Z', N'vendedor@test.com', N'Admin SubastaYa (Vendedor)', N'admin_vendedor'),
-('22222222-2222-2222-2222-222222222222', '2026-01-01T00:00:00.0000000Z', N'comprador1@test.com', N'Ana García (Comprador 1)', N'comprador1'),
-('33333333-3333-3333-3333-333333333333', '2026-01-01T00:00:00.0000000Z', N'comprador2@test.com', N'María López (Comprador 2)', N'comprador2'),
-('44444444-4444-4444-4444-444444444444', '2026-01-01T00:00:00.0000000Z', N'sinfondos@test.com', N'Carlos Sin Fondos', N'sinfondos');
+VALUES ('00000000-0000-0000-0000-000000000040', '2026-01-01T00:00:00.0000000Z', N'vendedor@test.com', N'Admin SubastaYa (Vendedor)', N'admin_vendedor'),
+('00000000-0000-0000-0000-000000000010', '2026-01-01T00:00:00.0000000Z', N'comprador1@test.com', N'Ana García (Comprador 1)', N'comprador1'),
+('00000000-0000-0000-0000-000000000020', '2026-01-01T00:00:00.0000000Z', N'comprador2@test.com', N'María López (Comprador 2)', N'comprador2'),
+('00000000-0000-0000-0000-000000000030', '2026-01-01T00:00:00.0000000Z', N'sinfondos@test.com', N'Carlos Sin Fondos', N'sinfondos');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Email', N'FullName', N'Username') AND [object_id] = OBJECT_ID(N'[Users]'))
     SET IDENTITY_INSERT [Users] OFF;
 

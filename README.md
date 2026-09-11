@@ -1,62 +1,58 @@
 # SubastaYa - Plataforma de Subastas en Tiempo Real
 
-![React](https://img.shields.io/badge/React-19.0-blue)
-![Vite](https://img.shields.io/badge/Vite-5.4-purple)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3)
-![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC292B)
-
-**SubastaYa** es una plataforma web completa de subastas en vivo y gestión financiera Escrow. Diseñada con arquitectura de microservicios en el backend y una interfaz dinámica en React + Bootstrap 5 en el frontend.
+Plataforma web de subastas en vivo con sistema de garantías Escrow y actualización en tiempo real. La arquitectura está dividida en un frontend cliente (React + Vite + Bootstrap) y microservicios backend (.NET 9 + SQL Server).
 
 ---
 
-## 🚀 Funcionalidades Principales
+## Características
 
-- 🔨 **Pujas en Tiempo Real & Puja Rápida**: Ofertas instantáneas con cálculo automático de incrementos según el rango de precio de la subasta.
-- 🛡️ **Garantía Escrow 1 a 1**: Retención transparente en la billetera digital equivalente al 100% de la oferta realizada. Al ser sobrepujado, los fondos se liberan automáticamente.
-- 👑 **Control de Liderazgo**: Restricción de autopujas para evitar que el postor líder sobrepuje sus propias ofertas activas.
-- 💼 **Billetera de Comprador y Vendedor**:
-  - **Compradores**: Gestión de saldo líquido disponible, retenciones activas y recarga simulada.
-  - **Vendedores**: Panel de recaudación por ventas, comisiones retenidas, alias de cobro y carga de capital operativo.
-- 🔒 **Auditoría de Transacciones**: Historial inmutable de eventos de subasta. Los usuarios consultan su registro privado personal, mientras que el perfil Administrador cuenta con supervisión global.
-- ⏱️ **Extensión Anti-Sniping**: Extensión automática de tiempo cuando ingresan ofertas en los últimos segundos antes del cierre.
-- ⏱️ **Notificaciones con Auto-cierre y Descarte**: Sistema de alertas emergentes con temporizador y botón `X` de cierre rápido.
+- **Pujas en tiempo real**: Actualización automática de ofertas con reglas dinámicas de incremento mínimo según la cotización del producto.
+- **Sistema Escrow**: Retención automática de saldo en billetera como garantía al momento de realizar una oferta. Si un postor es superado, los fondos se liberan automáticamente.
+- **Validación de liderazgo**: Prevención de autopujas consecutivas por parte del comprador que lidera la subasta.
+- **Gestión de Billeteras**:
+  - *Compradores*: Consulta de saldo líquido disponible, reservas activas en subastas y acreditación de saldo de prueba.
+  - *Vendedores*: Panel de recaudación, comisiones retenidas, alias de cobro y carga de capital.
+- **Auditoría inmutable**: Registro de eventos y transacciones con visibilidad privada para usuarios y supervisión global para administradores.
+- **Extensión anti-sniping**: Adición automática de tiempo ante ofertas registradas en los momentos finales del cierre.
 
 ---
 
-## 🏗️ Estructura del Proyecto
+## Estructura del Repositorio
 
-```
+```text
 SubastaYa/
 ├── frontend/
-│   └── subastaya-web/      # Aplicación web SPA (React + Vite + Bootstrap 5)
+│   └── subastaya-web/      # SPA desarrollada con React 19, Vite y Bootstrap 5
 ├── backend/
-│   ├── ApiGateway/         # Router y puerta de entrada REST API (.NET 9)
-│   ├── AuctionService/     # Servicio de subastas, ofertas y tiempo real
-│   ├── WalletService/      # Servicio de billetera digital y Escrow
-│   └── UserService/        # Gestión de perfiles y usuarios
+│   ├── ApiGateway/         # Punto de entrada y enrutamiento (.NET 9 API Gateway)
+│   ├── AuctionService/     # Microservicio de gestión de subastas y pujas
+│   ├── WalletService/      # Microservicio de billeteras y retenciones Escrow
+│   └── UserService/        # Microservicio de usuarios y autenticación
 ├── database/
-│   └── scripts/            # Scripts SQL para creación de tablas y datos semilla
-└── README.md
+│   └── scripts/            # Scripts SQL de inicialización y datos semilla
+└── docker-compose.yml      # Orquestación de contenedores locales
 ```
 
 ---
 
-## ⚙️ Instalación y Ejecución Local
+## Instalación y Ejecución
 
-### 1. Iniciar la Web Frontend
+### Frontend
 
-```bash
-cd frontend/subastaya-web
-npm install
-npm run dev
-```
+1. Navegar al directorio de la aplicación web:
+   ```bash
+   cd frontend/subastaya-web
+   ```
+2. Instalar dependencias e iniciar el servidor de desarrollo:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   La aplicación se ejecutará en `http://localhost:5173`.
 
-La aplicación estará disponible en `http://localhost:5173`.
+### Base de Datos
 
-### 2. Base de Datos (SQL Server)
-
-Ejecutar los scripts de estructura y datos de prueba en Microsoft SQL Server en el siguiente orden:
+Para inicializar las tablas y datos de prueba en SQL Server, ejecutar los scripts SQL en el siguiente orden:
 
 1. `database/scripts/01_UserService.sql`
 2. `database/scripts/02_WalletService.sql`
@@ -64,19 +60,21 @@ Ejecutar los scripts de estructura y datos de prueba en Microsoft SQL Server en 
 
 ---
 
-## 👥 Cuentas de Prueba (Modo Demo)
+## Cuentas de Prueba (Entorno Demo)
 
-| Usuario | Rol | Email | Descripción |
-|---|---|---|---|
-| **Ana García** | Comprador | `comprador1@test.com` | Cuenta de comprador con saldo para pujar |
-| **María López** | Comprador | `comprador2@test.com` | Cuenta de comprador con saldo para pujar |
-| **Carlos Sin Fondos** | Comprador | `sinfondos@test.com` | Cuenta para probar validaciones de saldo |
-| **Admin SubastaYa** | Vendedor / Admin | `vendedor@test.com` | Crear subastas y ver auditoría global |
+| ID | Usuario | Rol | Email | Propósito |
+|---|---|---|---|---|
+| `10` | Ana García | Comprador | `comprador1@test.com` | Pruebas de puja activa y saldo suficiente |
+| `20` | María López | Comprador | `comprador2@test.com` | Pruebas de competencia en ofertas |
+| `30` | Carlos Sin Fondos | Comprador | `sinfondos@test.com` | Validaciones de rechazo por saldo insuficiente |
+| `40` | Admin SubastaYa | Vendedor / Admin | `vendedor@test.com` | Publicación de artículos y auditoría global |
 
 ---
 
-## 🛠️ Tecnologías
+## Stack Tecnológico
 
-- **Frontend:** React 19, Vite, Bootstrap 5, React Icons, Custom CSS.
+- **Frontend:** React 19, Vite, Bootstrap 5, React Icons.
 - **Backend:** C#, .NET 9 Web API, Entity Framework Core.
 - **Base de Datos:** Microsoft SQL Server 2022.
+- **Contenedores:** Docker & Docker Compose.
+

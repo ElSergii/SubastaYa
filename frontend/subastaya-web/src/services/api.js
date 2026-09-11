@@ -11,28 +11,28 @@ const api = axios.create({
   timeout: 1500
 });
 
-// Usuarios demo
+// Usuarios demo (IDs de 2 dígitos)
 export const DEMO_USER_NAMES = {
-  '22222222-2222-2222-2222-222222222222': 'Ana García (Comprador 1)',
-  '33333333-3333-3333-3333-333333333333': 'María López (Comprador 2)',
-  '44444444-4444-4444-4444-444444444444': 'Carlos Sin Fondos',
-  '11111111-1111-1111-1111-111111111111': 'Admin SubastaYa (Vendedor)'
+  '10': 'Ana García (Comprador 1)',
+  '20': 'María López (Comprador 2)',
+  '30': 'Carlos Sin Fondos',
+  '40': 'Admin SubastaYa (Vendedor)'
 };
 
 // Billeteras iniciales
 const LOCAL_WALLETS = {
-  '22222222-2222-2222-2222-222222222222': { userId: '22222222-2222-2222-2222-222222222222', balance: 5000000, heldBalance: 0, availableBalance: 5000000 },
-  '33333333-3333-3333-3333-333333333333': { userId: '33333333-3333-3333-3333-333333333333', balance: 5000000, heldBalance: 0, availableBalance: 5000000 },
-  '44444444-4444-4444-4444-444444444444': { userId: '44444444-4444-4444-4444-444444444444', balance: 0, heldBalance: 0, availableBalance: 0 },
-  '11111111-1111-1111-1111-111111111111': { userId: '11111111-1111-1111-1111-111111111111', balance: 5000000, heldBalance: 0, availableBalance: 5000000 }
+  '10': { userId: '10', balance: 5000000, heldBalance: 0, availableBalance: 5000000 },
+  '20': { userId: '20', balance: 5000000, heldBalance: 0, availableBalance: 5000000 },
+  '30': { userId: '30', balance: 0, heldBalance: 0, availableBalance: 0 },
+  '40': { userId: '40', balance: 5000000, heldBalance: 0, availableBalance: 5000000 }
 };
 
 const now = new Date();
 
-// Almacén local de subastas
+// Almacén local de subastas (IDs de 2 dígitos)
 export const LOCAL_AUCTIONS_STORE = [
   {
-    id: 'a4444444-4444-4444-4444-444444444444',
+    id: '11',
     title: 'MacBook Pro M3 Max 16 Pulgadas',
     description: 'Computadora portátil profesional Apple M3 Max 36GB RAM en estado impecable.',
     imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
@@ -40,13 +40,13 @@ export const LOCAL_AUCTIONS_STORE = [
     startingPrice: 30000,
     currentPrice: 45000,
     minimumIncrement: 2000,
-    winningUserId: '22222222-2222-2222-2222-222222222222',
+    winningUserId: '10',
     endTime: new Date(now.getTime() + 45 * 60000).toISOString(),
     status: 'Activa',
     bidCount: 4
   },
   {
-    id: 'a5555555-5555-5555-5555-555555555555',
+    id: '12',
     title: 'Chaqueta de Cuero Vintage Schott NYC',
     description: 'Chaqueta clásica de cuero vacuno talle M en excelente estado de conservación.',
     imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80',
@@ -54,13 +54,13 @@ export const LOCAL_AUCTIONS_STORE = [
     startingPrice: 15000,
     currentPrice: 28000,
     minimumIncrement: 1000,
-    winningUserId: '33333333-3333-3333-3333-333333333333',
+    winningUserId: '20',
     endTime: new Date(now.getTime() + 60 * 60000).toISOString(),
     status: 'Activa',
     bidCount: 5
   },
   {
-    id: 'a6666666-6666-6666-6666-666666666666',
+    id: '13',
     title: 'Guitarra Gibson Les Paul Reedición 1959',
     description: 'Instrumento musical de alta gama con estuche rígido Custom Shop e inspección certificada.',
     imageUrl: 'https://images.unsplash.com/photo-1550985616-10810253b84d?auto=format&fit=crop&w=800&q=80',
@@ -74,7 +74,7 @@ export const LOCAL_AUCTIONS_STORE = [
     bidCount: 2
   },
   {
-    id: 'a1111111-1111-1111-1111-111111111111',
+    id: '14',
     title: 'Auto Colección 1:18',
     description: 'Modelo a escala metálico con aperturas de puertas y detalles interiores.',
     imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
@@ -82,13 +82,13 @@ export const LOCAL_AUCTIONS_STORE = [
     startingPrice: 35000,
     currentPrice: 45000,
     minimumIncrement: 2000,
-    winningUserId: '22222222-2222-2222-2222-222222222222',
+    winningUserId: '10',
     endTime: new Date(now.getTime() - 3600000).toISOString(),
     status: 'Finalizada',
     bidCount: 5
   },
   {
-    id: 'a2222222-2222-2222-2222-222222222222',
+    id: '15',
     title: 'Teclado Antiguo',
     description: 'Teclado mecánico clásico vintage en perfecto funcionamiento.',
     imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80',
@@ -102,7 +102,7 @@ export const LOCAL_AUCTIONS_STORE = [
     bidCount: 0
   },
   {
-    id: 'a3333333-3333-3333-3333-333333333333',
+    id: '16',
     title: 'Reloj Vintage 1980',
     description: 'Reloj suizo clásico de colección año 1980 en excelente estado.',
     imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
@@ -119,23 +119,23 @@ export const LOCAL_AUCTIONS_STORE = [
 
 // Historial local de pujas
 const LOCAL_BIDS = {
-  'a4444444-4444-4444-4444-444444444444': [
-    { id: 101, postor: 'Ana García (Comprador 1)', userId: '22222222-2222-2222-2222-222222222222', monto: 45000, fecha: '12:41:07 a. m.', timestamp: new Date().toISOString() },
-    { id: 102, postor: 'María López (Comprador 2)', userId: '33333333-3333-3333-3333-333333333333', monto: 39000, fecha: '12:40:05 a. m.', timestamp: new Date(Date.now() - 120000).toISOString() }
+  '11': [
+    { id: 101, postor: 'Ana García (Comprador 1)', userId: '10', monto: 45000, fecha: '12:41:07 a. m.', timestamp: new Date().toISOString() },
+    { id: 102, postor: 'María López (Comprador 2)', userId: '20', monto: 39000, fecha: '12:40:05 a. m.', timestamp: new Date(Date.now() - 120000).toISOString() }
   ],
-  'a5555555-5555-5555-5555-555555555555': [
-    { id: 201, postor: 'María López (Comprador 2)', userId: '33333333-3333-3333-3333-333333333333', monto: 28000, fecha: '11:15:22 a. m.', timestamp: new Date().toISOString() },
-    { id: 202, postor: 'Ana García (Comprador 1)', userId: '22222222-2222-2222-2222-222222222222', monto: 25000, fecha: '11:12:04 a. m.', timestamp: new Date(Date.now() - 300000).toISOString() }
+  '12': [
+    { id: 201, postor: 'María López (Comprador 2)', userId: '20', monto: 28000, fecha: '11:15:22 a. m.', timestamp: new Date().toISOString() },
+    { id: 202, postor: 'Ana García (Comprador 1)', userId: '10', monto: 25000, fecha: '11:12:04 a. m.', timestamp: new Date(Date.now() - 300000).toISOString() }
   ],
-  'a6666666-6666-6666-6666-666666666666': [
-    { id: 301, postor: 'María López (Comprador 2)', userId: '33333333-3333-3333-3333-333333333333', monto: 85000, fecha: '10:05:10 a. m.', timestamp: new Date().toISOString() }
+  '13': [
+    { id: 301, postor: 'María López (Comprador 2)', userId: '20', monto: 85000, fecha: '10:05:10 a. m.', timestamp: new Date().toISOString() }
   ]
 };
 
 // Eventos de auditoría
 const LOCAL_AUDIT_LOGS = [
-  { id: 1, auctionId: 'a4444444-4444-4444-4444-444444444444', userId: '22222222-2222-2222-2222-222222222222', action: 'PUJA_RECIBIDA', amount: 45000, timestamp: new Date().toISOString() },
-  { id: 2, auctionId: 'a5555555-5555-5555-5555-555555555555', userId: '33333333-3333-3333-3333-333333333333', action: 'PUJA_RECIBIDA', amount: 28000, timestamp: new Date(Date.now() - 120000).toISOString() }
+  { id: 1, auctionId: '11', userId: '10', action: 'PUJA_RECIBIDA', amount: 45000, timestamp: new Date().toISOString() },
+  { id: 2, auctionId: '12', userId: '20', action: 'PUJA_RECIBIDA', amount: 28000, timestamp: new Date(Date.now() - 120000).toISOString() }
 ];
 
 // Verificar expiración de subastas
@@ -195,15 +195,17 @@ export const getBidsByAuctionId = async (auctionId) => {
 // Crear nueva subasta
 export const createAuction = async (auctionData) => {
   const categoryNames = {
-    'c1111111-1111-1111-1111-111111111111': 'Tecnología',
-    'c2222222-2222-2222-2222-222222222222': 'Coleccionables',
-    'c3333333-3333-3333-3333-333333333333': 'Indumentaria',
-    'c4444444-4444-4444-4444-444444444444': 'Vehículos'
+    '1': 'Tecnología',
+    '2': 'Coleccionables',
+    '3': 'Indumentaria',
+    '4': 'Vehículos'
   };
+
+  const nextId = String(LOCAL_AUCTIONS_STORE.length + 11);
 
   const newAuctionObj = {
     ...auctionData,
-    id: crypto.randomUUID(),
+    id: nextId,
     currentPrice: Number(auctionData.startingPrice),
     categoryName: categoryNames[auctionData.categoryId] || 'Coleccionables',
     bidCount: 0,
@@ -238,7 +240,7 @@ export const recalculateWallets = () => {
 // Registrar puja
 export const placeBid = async (auctionId, userId, amount) => {
   const numAmount = Number(amount);
-  const userName = DEMO_USER_NAMES[userId] || `Usuario #${String(userId).substring(0, 8)}`;
+  const userName = DEMO_USER_NAMES[userId] || `Usuario #${userId}`;
   const nowIso = new Date().toISOString();
   const timeStr = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -269,8 +271,10 @@ export const placeBid = async (auctionId, userId, amount) => {
 
   recalculateWallets();
 
+  const newBidId = Math.floor(100 + Math.random() * 899);
+
   const newBidObj = {
-    id: Date.now(),
+    id: newBidId,
     auctionId,
     userId,
     postor: userName,
@@ -286,7 +290,7 @@ export const placeBid = async (auctionId, userId, amount) => {
   LOCAL_BIDS[auctionId].unshift(newBidObj);
 
   LOCAL_AUDIT_LOGS.push({
-    id: Date.now() + Math.floor(Math.random() * 1000),
+    id: Math.floor(10 + Math.random() * 89),
     auctionId,
     userId,
     action: 'PUJA_RECIBIDA',
@@ -311,7 +315,7 @@ export const depositWallet = async (userId, amount) => {
   LOCAL_WALLETS[userId] = current;
 
   LOCAL_AUDIT_LOGS.push({
-    id: Date.now(),
+    id: Math.floor(10 + Math.random() * 89),
     auctionId: 'DEPOSITO_BANCARIO',
     userId,
     action: 'PAGO_GARANTIZADO',
