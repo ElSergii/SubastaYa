@@ -106,15 +106,15 @@ export function calculateMarketValuation(startingPrice, currentPrice, categoryNa
 
 // 4. ALGORITMO DE EXTENSIÓN ANTI-SNIPING
 export function calculateAntiSnipingExtension(diffSeconds, bidCount = 0) {
-  const isCritical = diffSeconds <= 60 && diffSeconds > 0;
-  const extensionSeconds = Math.min(180, 60 + (Number(bidCount) * 15));
+  const isCritical = diffSeconds <= 300 && diffSeconds > 0;
+  const extensionSeconds = 600; // Extensión automática de 10 minutos (600s)
 
   return {
     isCritical,
     extensionSeconds,
     explanation: isCritical 
-      ? `Zona Crítica (<60s): Si ingresa una puja, la subasta se extenderá +${extensionSeconds} segundos automáticamente.` 
-      : `Reloj normal. Extensión calculada para pujas de último segundo: +${extensionSeconds}s.`
+      ? `Zona Crítica (<5 min): Si ingresa una puja, la subasta se extenderá +10 minutos (600s) automáticamente.` 
+      : `Reloj normal. Extensión calculada para pujas de último minuto (<5 min): +10 minutos (600s).`
   };
 }
 

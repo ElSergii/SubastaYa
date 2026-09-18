@@ -376,8 +376,17 @@ export const placeBid = async (auctionId, userId, amount) => {
     const endMs = new Date(targetAuction.endTime).getTime();
     const nowMs = Date.now();
     const diffSec = (endMs - nowMs) / 1000;
-    if (diffSec <= 60 && diffSec > 0) {
-      targetAuction.endTime = new Date(endMs + 60000).toISOString();
+    if (diffSec <= 300 && diffSec > 0) {
+      targetAuction.endTime = new Date(endMs + 600000).toISOString(); // Extensión automática de 10 minutos
+      LOCAL_AUDIT_LOGS.push({
+        id: Math.floor(10 + Math.random() * 89),
+        auctionId,
+        userId,
+        action: 'ANTI_SNIPING_TRIGGERED',
+        amount: numAmount,
+        details: 'Regla Anti-Sniping activada: subasta extendida 10 minutos por oferta en los últimos 5 minutos.',
+        timestamp: nowIso
+      });
     }
   }
 

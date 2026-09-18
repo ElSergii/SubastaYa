@@ -88,22 +88,22 @@ public class BidServiceImplementation : IBidService
             }
         }
 
-        // Regla Anti-Sniping: si la puja ocurre en los últimos 60 segundos
+        // Regla Anti-Sniping: si la puja ocurre en los últimos 5 minutos (300 segundos), extender 10 minutos adicionales
         bool antiSnipingTriggered = false;
         var remainingTime = effectiveEndDate - now;
-        if (remainingTime > TimeSpan.Zero && remainingTime <= TimeSpan.FromSeconds(60))
+        if (remainingTime > TimeSpan.Zero && remainingTime <= TimeSpan.FromMinutes(5))
         {
-            effectiveEndDate = effectiveEndDate.AddMinutes(2);
+            effectiveEndDate = effectiveEndDate.AddMinutes(10);
             auction.ExtendedUntil = effectiveEndDate;
             antiSnipingTriggered = true;
 
             await _auctionRepository.AddAuditLogAsync(new AuditLog
             {
-                EventType = "ANTI_SNIPING_EXTENDED",
+                EventType = "ANTI_SNIPING_TRIGGERED",
                 EntityId = auction.Id,
                 EntityName = nameof(Auction),
                 UserId = bidDto.UserId,
-                Details = $"Anti-Sniping activado: Subasta extendida por 2 minutos hasta {effectiveEndDate:HH:mm:ss} UTC.",
+                Details = $"Regla Anti-Sniping activada: Subasta extendida por 10 minutos hasta {effectiveEndDate:HH:mm:ss} UTC.",
                 Timestamp = now
             });
         }
@@ -164,7 +164,7 @@ public class BidServiceImplementation : IBidService
         var result = new BidResultDto
         {
             Success = true,
-            Message = antiSnipingTriggered ? "¡Oferta aceptada! Se activó Anti-Sniping (+2 min de extensión)." : "¡Oferta aceptada! Eres el postor líder.",
+            Message = antiSnipingTriggered ? "¡Oferta aceptada! Se activó la regla Anti-Sniping (+10 min de extensión)." : "¡Oferta aceptada! Eres el postor líder.",
             CurrentPrice = auction.CurrentPrice,
             LeadingUserId = auction.WinnerId,
             EffectiveEndDate = effectiveEndDate,
