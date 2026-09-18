@@ -30,6 +30,7 @@ const LOCAL_WALLETS = {
 const now = new Date();
 
 // Almacén local de subastas (IDs de 2 dígitos)
+// Almacén local de subastas (IDs de 2 dígitos)
 export const LOCAL_AUCTIONS_STORE = [
   {
     id: '11',
@@ -41,6 +42,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 45000,
     minimumIncrement: 2000,
     winningUserId: '10',
+    sellerId: '40',
     endTime: new Date(now.getTime() + 45 * 60000).toISOString(),
     status: 'Activa',
     bidCount: 4
@@ -55,6 +57,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 28000,
     minimumIncrement: 1000,
     winningUserId: '20',
+    sellerId: '40',
     endTime: new Date(now.getTime() + 60 * 60000).toISOString(),
     status: 'Activa',
     bidCount: 5
@@ -69,6 +72,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 85000,
     minimumIncrement: 2500,
     winningUserId: null,
+    sellerId: '40',
     endTime: new Date(now.getTime() + 90 * 60000).toISOString(),
     status: 'Activa',
     bidCount: 2
@@ -83,6 +87,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 45000,
     minimumIncrement: 2000,
     winningUserId: '10',
+    sellerId: '40',
     endTime: new Date(now.getTime() - 3600000).toISOString(),
     status: 'Finalizada',
     bidCount: 5
@@ -97,6 +102,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 10000,
     minimumIncrement: 1000,
     winningUserId: null,
+    sellerId: '40',
     endTime: new Date(now.getTime() - 7200000).toISOString(),
     status: 'Desierta',
     bidCount: 0
@@ -111,6 +117,7 @@ export const LOCAL_AUCTIONS_STORE = [
     currentPrice: 40000,
     minimumIncrement: 1000,
     winningUserId: null,
+    sellerId: '40',
     endTime: new Date(now.getTime() - 14400000).toISOString(),
     status: 'Desierta',
     bidCount: 0
@@ -141,11 +148,11 @@ const LOCAL_AUDIT_LOGS = [
 // Verificar expiración de subastas
 function autoCheckExpirations() {
   const nowMs = Date.now();
-  LOCAL_AUCTIONS_STORE.forEach((auc) => {
-    if (auc.status === 'Activa') {
-      const endMs = new Date(auc.endTime).getTime();
+  LOCAL_AUCTIONS_STORE.forEach((idx_tk) => {
+    if (idx_tk.status === 'Activa') {
+      const endMs = new Date(idx_tk.endTime).getTime();
       if (nowMs >= endMs) {
-        auc.status = (auc.bidCount && auc.bidCount > 0) ? 'Finalizada' : 'Desierta';
+        idx_tk.status = (idx_tk.bidCount && idx_tk.bidCount > 0) ? 'Finalizada' : 'Desierta';
       }
     }
   });
@@ -190,6 +197,32 @@ export const getBidsByAuctionId = async (auctionId) => {
     } catch (err) {}
   }
   return localList;
+};
+
+// Obtener mapa/set de IDs de subastas donde un usuario realizó pujas
+export const getUserBidsMap = async (userId) => {
+  autoCheckExpirations();
+  const bidAuctionIds = new Set();
+
+  if (USE_HTTP_BACKEND) {
+    try {
+      const response = await api.get(`/users/${userId}/bids`);
+      if (Array.isArray(response.data)) {
+        response.data.forEach((idx_tk) => bidAuctionIds.add(String(idx_tk.auctionId || idx_tk.subastaId)));
+        return bidAuctionIds;
+      }
+    } catch (err) {}
+  }
+
+  // Fallback local
+  Object.keys(LOCAL_BIDS).forEach((auctionId) => {
+    const bids = LOCAL_BIDS[auctionId] || [];
+    if (bids.some((idx_tk) => String(idx_tk.userId) === String(userId))) {
+      bidAuctionIds.add(String(auctionId));
+    }
+  });
+
+  return bidAuctionIds;
 };
 
 // Crear nueva subasta

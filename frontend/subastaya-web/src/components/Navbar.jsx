@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navbar, Nav, Container, Badge, Button } from 'react-bootstrap';
-import { FaGavel, FaWallet, FaUserGear, FaClockRotateLeft, FaRightFromBracket, FaRightToBracket, FaPlus } from 'react-icons/fa6';
+import { FaGavel, FaWallet, FaUserGear, FaClockRotateLeft, FaRightFromBracket, FaRightToBracket, FaPlus, FaClipboardList } from 'react-icons/fa6';
 
 export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout, onOpenCreateAuction }) {
   const isAdmin = currentUser?.role === 'Admin';
@@ -39,6 +39,14 @@ export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentT
               className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'auctions' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
             >
               <FaGavel /> Subastas
+            </Nav.Link>
+
+            <Nav.Link 
+              active={currentTab === 'activities'} 
+              onClick={() => setCurrentTab('activities')}
+              className={`d-flex align-items-center gap-2 px-3 fw-bold ${currentTab === 'activities' ? 'text-warning border-bottom border-warning border-2' : 'text-secondary'}`}
+            >
+              <FaClipboardList /> Mis Actividades
             </Nav.Link>
 
             <Nav.Link 

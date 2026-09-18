@@ -7,6 +7,7 @@ import AuditView from './components/AuditView';
 import AdminPanel from './components/AdminPanel';
 import LoginModal, { DEMO_ACCOUNTS } from './components/LoginModal';
 import CreateAuctionModal from './components/CreateAuctionModal';
+import MyActivitiesView from './components/MyActivitiesView';
 import { getWallet } from './services/api';
 import './App.css';
 
@@ -141,6 +142,18 @@ function App() {
           onAuctionCreated={() => {
             pushNotif('exito', 'Catálogo Actualizado', 'Subasta publicada en el sistema.');
           }}
+          pushNotif={pushNotif}
+        />
+      );
+    }
+
+    if (currentTab === 'activities') {
+      return (
+        <MyActivitiesView 
+          currentUser={currentUser}
+          activeUserId={activeUserId}
+          wallet={wallet}
+          onBidSuccess={refreshWallet}
           pushNotif={pushNotif}
         />
       );
