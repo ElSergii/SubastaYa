@@ -201,21 +201,100 @@ export const createAuction = async (auctionData) => {
     '4': 'Vehículos'
   };
 
+  if (USE_HTTP_BACKEND) {
+    try {
+      const response = await api.post('/auctions', auctionData);
+      if (response.data) return response.data;
+    } catch (err) {
+      console.error('[CODE-ERROR] - Error HTTP en createAuction:', err);
+      const serverMsg = err.response?.data?.error || err.response?.data?.message || 'Error al crear la subasta en el servidor.';
+      throw new Error(serverMsg);
+    }
+  }
+
   const nextId = String(LOCAL_AUCTIONS_STORE.length + 11);
+
+  const durationHrs = Number(auctionData.durationHours) || 24;
+  const calculatedEndTime = auctionData.endDate || auctionData.endTime || new Date(Date.now() + durationHrs * 3600000).toISOString();
 
   const newAuctionObj = {
     ...auctionData,
     id: nextId,
-    currentPrice: Number(auctionData.startingPrice),
-    categoryName: categoryNames[auctionData.categoryId] || 'Coleccionables',
+    title: auctionData.title || auctionData.Titulo || 'Nueva Subasta',
+    description: auctionData.description || auctionData.Descripcion || '',
+    imageUrl: auctionData.imageUrl || auctionData.UrlImagen || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
+    startingPrice: Number(auctionData.startingPrice || auctionData.PrecioBase || 1000),
+    currentPrice: Number(auctionData.startingPrice || auctionData.PrecioBase || 1000),
+    minimumIncrement: Number(auctionData.minimumIncrement || auctionData.IncrementoMinimo || 500),
+    categoryName: auctionData.categoryName || categoryNames[auctionData.categoryId] || 'Coleccionables',
+    categoryId: auctionData.categoryId || '2',
+    sellerId: auctionData.sellerId || auctionData.seller || '40',
     bidCount: 0,
     winningUserId: null,
-    endTime: auctionData.endDate || new Date(Date.now() + 3600000).toISOString(),
+    endTime: calculatedEndTime,
     status: 'Activa'
   };
 
   LOCAL_AUCTIONS_STORE.unshift(newAuctionObj);
+
+  LOCAL_AUDIT_LOGS.push({
+    id: Math.floor(10 + Math.random() * 89),
+    auctionId: nextId,
+    userId: String(newAuctionObj.sellerId),
+    action: 'SUBASTA_CREADA',
+    amount: newAuctionObj.startingPrice,
+    timestamp: new Date().toISOString()
+  });
+
   return newAuctionObj;
+};
+
+// Eliminar/Cancelar subasta
+export const deleteAuction = async (auctionId, userId) => {
+  if (USE_HTTP_BACKEND) {
+    try {
+      const response = await api.delete(`/auctions/${auctionId}`, {
+        params: { userId }
+      });
+      return response.data;
+    } catch (err) {
+      console.error('[CODE-ERROR] - Error HTTP en deleteAuction:', err);
+      const serverMsg = err.response?.data?.error || err.response?.data?.message || 'Error al eliminar la subasta en el servidor.';
+      throw new Error(serverMsg);
+    }
+  }
+
+  const idx = LOCAL_AUCTIONS_STORE.findIndex((auc) => String(auc.id) === String(auctionId));
+  if (idx === -1) {
+    throw new Error(`Subasta con ID ${auctionId} no encontrada.`);
+  }
+
+  const target = LOCAL_AUCTIONS_STORE[idx];
+  const isSeller = String(target.sellerId) === String(userId);
+  const isAdmin = String(userId) === '40' || String(userId) === '00000000-0000-0000-0000-000000000040';
+
+  if (!isSeller && !isAdmin) {
+    throw new Error('Solo el vendedor creador o un Administrador puede cancelar esta subasta.');
+  }
+
+  const bids = LOCAL_BIDS[auctionId] || [];
+  if ((target.bidCount && target.bidCount > 0) || bids.length > 0) {
+    throw new Error('No se puede cancelar una subasta que ya posee ofertas registradas.');
+  }
+
+  LOCAL_AUCTIONS_STORE.splice(idx, 1);
+  delete LOCAL_BIDS[auctionId];
+
+  LOCAL_AUDIT_LOGS.push({
+    id: Math.floor(10 + Math.random() * 89),
+    auctionId: String(auctionId),
+    userId: String(userId),
+    action: 'SUBASTA_CANCELADA',
+    amount: target.currentPrice,
+    timestamp: new Date().toISOString()
+  });
+
+  return { success: true, message: 'Subasta cancelada exitosamente.' };
 };
 
 // Recalcular billeteras

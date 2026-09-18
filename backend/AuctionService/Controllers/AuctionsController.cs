@@ -77,6 +77,35 @@ public class AuctionsController : ControllerBase
     }
 
     /// <summary>
+    /// Elimina o cancela una subasta existente únicamente si no posee pujas registradas.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAuction(Guid id, [FromQuery] Guid userId)
+    {
+        try
+        {
+            await _auctionService.DeleteAuctionAsync(id, userId);
+            return Ok(new { success = true, message = "Subasta cancelada exitosamente." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Obtiene el historial de pujas de una subasta.
     /// </summary>
     [HttpGet("{id:guid}/bids")]

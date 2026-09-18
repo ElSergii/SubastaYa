@@ -75,6 +75,43 @@ public class AuctionServiceImplementation : IAuctionService
         return MapToDto(auction);
     }
 
+    public async Task DeleteAuctionAsync(Guid id, Guid userId)
+    {
+        var auction = await _auctionRepository.GetByIdWithBidsAsync(id);
+        if (auction == null)
+        {
+            throw new KeyNotFoundException($"No se encontró la subasta con ID {id}");
+        }
+
+        var adminGuid = Guid.Parse("00000000-0000-0000-0000-000000000040");
+        var isSeller = auction.SellerId == userId;
+        var isAdmin = userId == adminGuid;
+
+        if (!isSeller && !isAdmin)
+        {
+            throw new UnauthorizedAccessException("Solo el vendedor creador o un Administrador puede cancelar esta subasta.");
+        }
+
+        if (auction.BidCount > 0 || (auction.Bids != null && auction.Bids.Any()))
+        {
+            throw new InvalidOperationException("No se puede cancelar una subasta que ya posee ofertas registradas.");
+        }
+
+        await _auctionRepository.DeleteAsync(auction);
+
+        await _auctionRepository.AddAuditLogAsync(new AuditLog
+        {
+            EventType = "AUCTION_DELETED",
+            EntityId = auction.Id,
+            EntityName = nameof(Auction),
+            UserId = userId,
+            Details = $"Subasta '{auction.Title}' cancelada/eliminada exitosamente.",
+            Timestamp = DateTime.UtcNow
+        });
+
+        await _auctionRepository.SaveChangesAsync();
+    }
+
     public async Task<IEnumerable<CategoryDto>> GetCategoriesAsync()
     {
         var categories = await _auctionRepository.GetCategoriesAsync();

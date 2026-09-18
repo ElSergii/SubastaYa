@@ -1,8 +1,8 @@
 import React from 'react';
 import { Navbar, Nav, Container, Badge, Button } from 'react-bootstrap';
-import { FaGavel, FaWallet, FaUserGear, FaClockRotateLeft, FaRightFromBracket, FaRightToBracket } from 'react-icons/fa6';
+import { FaGavel, FaWallet, FaUserGear, FaClockRotateLeft, FaRightFromBracket, FaRightToBracket, FaPlus } from 'react-icons/fa6';
 
-export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout }) {
+export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentTab, onOpenLogin, onLogout, onOpenCreateAuction }) {
   const isAdmin = currentUser?.role === 'Admin';
 
   return (
@@ -70,6 +70,16 @@ export default function AppNavbar({ currentUser, wallet, currentTab, setCurrentT
 
           {/* Estado de usuario */}
           <div className="d-flex align-items-center gap-3 mt-3 mt-lg-0">
+            {/* Botón Publicar Subasta */}
+            <Button
+              size="sm"
+              onClick={onOpenCreateAuction}
+              className="btn-gold d-flex align-items-center gap-2 px-3 py-1.5 fw-bold"
+              style={{ backgroundColor: '#c9a84c', borderColor: '#c9a84c', color: '#09050a' }}
+            >
+              <FaPlus /> Publicar Subasta
+            </Button>
+
             {currentUser ? (
               <>
                 {wallet && (

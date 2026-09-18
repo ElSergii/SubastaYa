@@ -6,6 +6,7 @@ import WalletView from './components/WalletView';
 import AuditView from './components/AuditView';
 import AdminPanel from './components/AdminPanel';
 import LoginModal, { DEMO_ACCOUNTS } from './components/LoginModal';
+import CreateAuctionModal from './components/CreateAuctionModal';
 import { getWallet } from './services/api';
 import './App.css';
 
@@ -85,6 +86,7 @@ function Notificaciones({ lista, dismiss }) {
 function App() {
   const [currentUser, setCurrentUser] = useState(DEMO_ACCOUNTS[0]);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [currentTab, setCurrentTab] = useState('auctions');
   const { lista: notifs, push: pushNotif, dismiss: dismissNotif } = useNotif();
@@ -182,6 +184,18 @@ function App() {
         onLoginSuccess={handleLoginSuccess}
       />
 
+      {/* Modal de Publicar Subasta */}
+      <CreateAuctionModal
+        show={createModalOpen}
+        onHide={() => setCreateModalOpen(false)}
+        currentUser={currentUser}
+        onAuctionCreated={() => {
+          refreshWallet();
+          pushNotif('exito', 'Catálogo Actualizado', 'La subasta fue publicada con éxito.');
+        }}
+        pushNotif={pushNotif}
+      />
+
       {/* Barra de Navegación Bootstrap */}
       <Navbar 
         currentUser={currentUser} 
@@ -190,6 +204,7 @@ function App() {
         setCurrentTab={setCurrentTab} 
         onOpenLogin={() => setLoginModalOpen(true)}
         onLogout={handleLogout}
+        onOpenCreateAuction={() => setCreateModalOpen(true)}
       />
 
       {/* Contenido Principal */}

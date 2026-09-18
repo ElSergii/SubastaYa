@@ -164,7 +164,9 @@ export default function AuctionList({ activeUserId, wallet, onBidSuccess, pushNo
                 wallet={wallet}
                 pushNotif={pushNotif}
                 onBidSuccess={(updatedAuction) => {
-                  if (updatedAuction && updatedAuction.id) {
+                  if (updatedAuction && updatedAuction.deleted) {
+                    fetchAuctionsList();
+                  } else if (updatedAuction && updatedAuction.id) {
                     setAuctions((prev) => 
                       prev.map((item) => 
                         item.id === updatedAuction.id 

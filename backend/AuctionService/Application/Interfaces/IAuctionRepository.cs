@@ -10,6 +10,7 @@ public interface IAuctionRepository
     Task<Auction?> GetByIdWithBidsAsync(Guid id);
     Task AddAsync(Auction auction);
     Task UpdateAsync(Auction auction);
+    Task DeleteAsync(Auction auction);
     Task SaveChangesAsync();
     
     Task<IEnumerable<Category>> GetCategoriesAsync();

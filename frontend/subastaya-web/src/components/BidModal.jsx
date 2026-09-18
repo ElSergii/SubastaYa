@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Badge, Alert, Table, Spinner } from 'react-bootstrap';
-import { FaGavel, FaCalculator, FaCrown, FaTriangleExclamation, FaXmark, FaCircleCheck, FaCircleExclamation } from 'react-icons/fa6';
-import { placeBid, getBidsByAuctionId, getAuctionById } from '../services/api';
+import { FaGavel, FaCalculator, FaCrown, FaTriangleExclamation, FaXmark, FaCircleCheck, FaCircleExclamation, FaTrashCan } from 'react-icons/fa6';
+import { placeBid, getBidsByAuctionId, getAuctionById, deleteAuction } from '../services/api';
 import { 
   calculateDynamicIncrement, 
   calculateEscrowBreakdown, 
@@ -19,6 +19,7 @@ export default function BidModal({ show, onHide, auction, activeUserId, wallet, 
   const [timeLeft, setTimeLeft] = useState('');
   const [diffSeconds, setDiffSeconds] = useState(0);
   const [cargando, setCargando] = useState(false);
+  const [cargandoEliminar, setCargandoEliminar] = useState(false);
   const [bidHistory, setBidHistory] = useState([]);
   const [showMathDetails, setShowMathDetails] = useState(false);
 
@@ -43,6 +44,36 @@ export default function BidModal({ show, onHide, auction, activeUserId, wallet, 
   const isInsufficientBid = numBidAmount < nextMinBid;
   const isInsufficientFunds = Boolean(wallet && wallet.availableBalance < escrowInfo.totalEscrowRequired);
   const userHasBidBefore = bidHistory.some((item) => String(item.userId) === String(activeUserId));
+
+  // Permiso para cancelar / eliminar subasta (Solo creador o admin, y únicamente si no tiene ofertas registradas)
+  const isOwnerOrAdmin = String(auction.sellerId) === String(activeUserId) || 
+                         String(activeUserId) === '40' || 
+                         String(activeUserId) === '00000000-0000-0000-0000-000000000040';
+  const hasNoBids = (auction.bidCount === 0 || !auction.bidCount) && bidHistory.length === 0;
+  const canDelete = isOwnerOrAdmin && hasNoBids;
+
+  const handleDeleteAuction = async () => {
+    if (!canDelete) return;
+
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas cancelar y eliminar esta subasta? Esta acción es irreversible.');
+    if (!confirmDelete) return;
+
+    setCargandoEliminar(true);
+    setErrorMessage('');
+
+    try {
+      const res = await deleteAuction(auction.id, activeUserId);
+      const msg = res?.message || 'Subasta cancelada exitosamente.';
+      if (pushNotif) pushNotif('exito', 'Subasta Cancelada', msg);
+      onHide();
+      if (onBidSuccess) onBidSuccess({ id: auction.id, deleted: true });
+    } catch (err) {
+      console.error('[CODE-ERROR] - Error al cancelar subasta:', err);
+      setErrorMessage(err.message || 'Error al intentar cancelar la subasta.');
+    } finally {
+      setCargandoEliminar(false);
+    }
+  };
 
   // Bloquea pujar si el usuario ya es el líder actual, la subasta expiró, el monto no alcanza o no hay fondos
   const isDisabled = cargando || isCurrentWinner || isExpired || isInsufficientBid || isInsufficientFunds;
@@ -199,9 +230,24 @@ export default function BidModal({ show, onHide, auction, activeUserId, wallet, 
       <Modal.Body className="p-4" style={{ backgroundColor: '#161217', color: '#f0e8dc', borderRadius: 16 }}>
         {/* CABECERA CON BADGE Y BOTÓN CERRAR */}
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <Badge bg="dark" className="border border-secondary text-light px-3 py-1 fw-bold text-uppercase" style={{ fontSize: '0.7rem' }}>
-            {auction.categoryName || 'Tecnología'}
-          </Badge>
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <Badge bg="dark" className="border border-secondary text-light px-3 py-1 fw-bold text-uppercase" style={{ fontSize: '0.7rem' }}>
+              {auction.categoryName || 'Tecnología'}
+            </Badge>
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="outline-danger"
+                disabled={cargandoEliminar || cargando}
+                onClick={handleDeleteAuction}
+                className="py-1 px-2.5 fw-bold d-flex align-items-center gap-1.5"
+                style={{ fontSize: '0.75rem', borderColor: '#ef4444', color: '#ef4444' }}
+                title="Cancelar y eliminar subasta sin ofertas"
+              >
+                {cargandoEliminar ? <Spinner animation="border" size="sm" /> : <><FaTrashCan /> 🗑️ Cancelar / Eliminar Subasta</>}
+              </Button>
+            )}
+          </div>
           <button 
             type="button" 
             onClick={onHide} 
